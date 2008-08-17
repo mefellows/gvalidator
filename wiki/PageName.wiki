@@ -1,0 +1,5 @@
+#summary GValidator roadmap and current status.
+
+= Roadmap =
+
+Currently, GValidator is a stand-alone library with no dependencies on any other library. I would like to keep it this way as much as possible, but there is a possibility of making a Mootools port which would be much more lightweight for Mootools adopters.
