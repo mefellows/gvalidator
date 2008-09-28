@@ -48,6 +48,11 @@ To get the latest, view or post bugs or learn more go to:
 GValidator Change Log
 ----------------------------------------------------------------
 
-1.0
+0.3.0
 --
   Initial Release of GValidator on Google Code
+  
+  
+Thanks
+----------------------------------------------------------------
+Icons in the example are provided by Fam Fam Fam (http://www.famfamfam.com/lab/icons/mini/)  
