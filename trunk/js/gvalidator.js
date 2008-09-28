@@ -624,7 +624,7 @@ ONEGEEK.forms.AbstractComboBox = function(field) {
     return new ONEGEEK.forms.AbstractComboBox(field);
   }
   
-   /**
+  /**
    * Override the validation function
    *  
    * Defaults to returning true if there is a value for the field and showing
@@ -633,7 +633,7 @@ ONEGEEK.forms.AbstractComboBox = function(field) {
    * @return true if there is a value, false if not
    */
   this.validate = function() {
-    if(this.field.value) {
+    if(this.field.value && this.field.value != '') {
       this.setState(FIELD_STATUS_OK);
       return true;
     }    
@@ -641,7 +641,7 @@ ONEGEEK.forms.AbstractComboBox = function(field) {
       this.setState(FIELD_STATUS_INFO); 
     }   
     
-    return true;
+    return false;
   }
 }
 
@@ -660,6 +660,19 @@ ONEGEEK.forms.AbstractComboBox.prototype = new ONEGEEK.forms.AbstractFormField;
  */
 ONEGEEK.forms.GenericComboBox = function(field) {
   this.field = field;
+  
+  /**
+   * Get a new instance of this object
+   * This is used for the FormFieldFactory to lookup and
+   * create objects
+   * 
+   * @param {Object} field The DOM element (field) 
+   * @see ONEGEEK.forms.FormField
+   * @override 
+   */
+  this.getNewInstance = function(field) {
+    return new ONEGEEK.forms.GenericComboBox(field);
+  }   
 }
 
 // Inherits from the AbstractComboBox
@@ -668,6 +681,57 @@ ONEGEEK.forms.GenericComboBox.prototype = new ONEGEEK.forms.AbstractComboBox;
 // Register the select class with the factory
 formFieldFactory.registerFormField('select', new ONEGEEK.forms.GenericComboBox());
 formFieldFactory.registerFormField('combo', new ONEGEEK.forms.GenericComboBox());
+
+/////////////////////////////////////////////
+// Start RequiredComboBox Class Definition  //
+/////////////////////////////////////////////
+
+/**
+ * Required Combo Box provides a default required implementation
+ * for a combo box
+ * 
+ * @param {Object} field
+ */
+ONEGEEK.forms.RequiredComboBox = function(field) {
+  this.field = field;
+  this.isRequired = true;
+  
+  /**
+   * Get a new instance of this object
+   * This is used for the FormFieldFactory to lookup and
+   * create objects
+   * 
+   * @param {Object} field The DOM element (field) 
+   * @see ONEGEEK.forms.FormField
+   * @override 
+   */
+  this.getNewInstance = function(field) {
+    return new ONEGEEK.forms.RequiredComboBox(field);
+  } 
+  
+  /**
+   * Calls parent validation function and sets status accordingly
+   * 
+   * @return true if there is a value, false if not
+   */
+  this.validate = function() {
+	var result = ONEGEEK.forms.AbstractComboBox.prototype.validate.call(this);
+	// If result is false and has been modified, set error state
+	if(!result) {
+	    if(this.modified == true) {
+	      this.setState(FIELD_STATUS_ERROR); 
+	    }   				
+	}
+	return result;
+  }  
+}
+
+// Inherits from the AbstractComboBox
+ONEGEEK.forms.RequiredComboBox.prototype = new ONEGEEK.forms.AbstractComboBox;
+
+// Register the select class with the factory
+formFieldFactory.registerFormField('requiredselect', new ONEGEEK.forms.RequiredComboBox());
+formFieldFactory.registerFormField('requiredcombo', new ONEGEEK.forms.RequiredComboBox());
 
 /////////////////////////////////////////////
 // Start AbstractCheckbox Class Definition //
@@ -1228,11 +1292,11 @@ ONEGEEK.forms.Form = function(form) {
       fields[i].setModified(true);
       
       // Highlight any errors along the way
-      var valid = fields[i].validate()
+      var valid = fields[i].validate();
       
       // Check if field has validated AND
       // if it is a required field
-      if(!valid && fields[i].isRequiredField()) {     
+      if(!valid && fields[i].isRequiredField()) { 
         if(!firstErrorElement) {
           firstErrorElement = fields[i].getDOMElement(); 
         }       
