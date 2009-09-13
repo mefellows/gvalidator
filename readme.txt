@@ -1,4 +1,5 @@
-GValidator - Javascript Validation library from OneGeek (http://www.onegeek.com.au)
+GValidator (v0.4.20) - Javascript Validation library from OneGeek (http://www.onegeek.com.au)
+
 ----------------------------------------------------------------
 
 GValidator is a lightweight javascript form validation library that automatically 
@@ -47,6 +48,11 @@ To get the latest, view or post bugs or learn more go to:
 
 GValidator Change Log
 ----------------------------------------------------------------
+0.4.20
+--
+ Added ability to use the 'required' class for validation purposes.
+ Elements can now have multiple classes (for non-GValidator purposes) and it won't affect the GValidator validation
+
 
 0.3.0
 --
