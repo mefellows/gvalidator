@@ -1006,7 +1006,7 @@ ONEGEEK.forms.AbstractTextField.prototype = new ONEGEEK.forms.AbstractFormField;
 ONEGEEK.forms.NameField = function(field) {
   this.field = field;
   this.name = 'name';
-  this.regex = /([a-zA-Z-\'\s]{2,30})/g
+  this.regex = /^([a-zA-Z-\'\s]{2,30})$/g
   this.cleanRegex = /[^a-zA-Z-\'\s]/g
   this.isRequired = true;  
   this.errorMessage   = 'Your name must be between 2 and 30 characters';
@@ -1045,7 +1045,7 @@ formFieldFactory.registerFormField('name', new ONEGEEK.forms.NameField());
 ONEGEEK.forms.PhoneField = function(field) {
   this.field = field;
   this.name = 'phone';
-  this.regex = /([0-9]{8,10})/g
+  this.regex = /^([0-9]{8,10})$/g
   this.cleanRegex = /[^0-9]/g
   this.isRequired = true;   
   this.errorMessage   = 'Your phone number needs to be at least 8 digits long i.e. 03 1234 5678';
@@ -1202,7 +1202,7 @@ formFieldFactory.registerFormField('genericrequiredtext', new ONEGEEK.forms.Gene
 ONEGEEK.forms.CaptchaTextField = function(field) {
   this.field = field;
   this.name = 'captcha';
-  this.regex = /[A-Za-z0-9-_]/g
+  this.regex = /^[A-Za-z0-9-_]$/g
   this.cleanRegex = /[<>\/\\\(\);]/g
   this.isRequired = true;
   
