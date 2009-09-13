@@ -19,8 +19,8 @@ form.autoform span.required{float:left}
 /* Inputs */
 form.autoform input[type="text"]{padding:5px;}
 form.autoform select{width:190px}
-form.autoform label.checkbox,form.autoform label.radio{width:auto; float:left; display:inline;}
-form.autoform div#checkboxdiv input, div#radiodiv input{float:left; display:inline;}
+form.autoform input.checkbox{float:none; display:inline}
+form.autoform label.checkbox,form.autoform label.radio{width:auto; float:none; display:inline;}
 
 /* Submit */
 form.autoform div#submitdiv{padding:5px}

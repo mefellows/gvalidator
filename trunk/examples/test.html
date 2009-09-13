@@ -1,6 +1,7 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
 <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <title>GValidator Example</title>
   <script type="text/javascript" src="../js/gvalidator.js" defer="defer"></script>  
   <link rel="stylesheet" type="text/css" href="../css/gvalidator.css" media="screen"/>
@@ -9,17 +10,18 @@
 
   <h1>GValidator Example</h1>
   <p>Fields marked with a <span class="required">*</span> are required.</p> 
-   <form action="" method="POST" id="autoform" class="autoform" >
-    <div><label for="firstname">First Name</label><input type="text" name="firstname" class="firstname" id="firstname" maxlength="30"/></div>    
-    <div><label for="lastname">Last Name</label><input type="text" name="lastname" class="lastname" id="lastname" maxlength="30"/></div>
-		<div><label for="subject">Subject</label><input type="text" name="subject" class="subject" id="subject" maxlength="30"/></div>
-		<div><label for="captcha">Captcha</label><input type="text" name="captcha" class="captcha" id="captcha" maxlength="30"/></div>
-    <div><label for="phone">Phone</label><input type="text" name="phone" class="phone" id="phone" maxlength="12"/></div>
-    <div><label for="email">Email</label><input type="text" name="email" class="email" id="email" maxlength="60"/></div>
-    <div id="addressdiv"><label for="address">Address</label><input type="text" name="address" class="text" id="address" maxlength="60"/></div>
+   <form action="" method="post" id="autoform" class="autoform" >
+    <div><label for="firstname">First Name</label><input type="text" name="firstname" class="required firstname" id="firstname" maxlength="30"/></div>    
+    <div><label for="lastname">Last Name</label><input type="text" name="lastname" class="lastname required" id="lastname" maxlength="30"/></div>
+    <div><label for="lastnamenr">Last Name (Not Required)</label><input type="text" name="lastnamenr" class="lastname" id="lastnamenr" maxlength="30"/></div>
+		<div><label for="subject">Subject</label><input type="text" name="subject" class="subject required" id="subject" maxlength="30"/></div>
+		<div><label for="captcha">Captcha</label><input type="text" name="captcha" class="captcha required" id="captcha" maxlength="30"/></div>
+    <div><label for="phone">Phone</label><input type="text" name="phone" class="phone required" id="phone" maxlength="12"/></div>
+    <div><label for="email">Email</label><input type="text" name="email" class="email required" id="email" maxlength="60"/></div>
+    <div id="addressdiv"><label for="address">Address</label><input type="text" name="address" class="text required" id="address" maxlength="60"/></div>
     <div>
       <label for="howfound">How did you find us?</label>
-      <select id="howfound" name="howfound" class="requiredselect">
+      <select id="howfound" name="howfound" class="select required">
         <option value="">[select an option]</option>
         <option value="google">Google</option>
         <option value="yellowpagesonline">Yellow Pages Online</option>
@@ -27,21 +29,43 @@
         <option value="othersearchengine">Other search engine</option>
         <option value="Other">Other</option>
       </select>
+    </div>  
+    <div>
+      <label for="howfound">No need to answer</label>
+      <select id="notrequiredselect" name="notrequiredselect" class="select">
+        <option value="">[select an option]</option>
+        <option value="google">Test 1</option>
+        <option value="yellowpagesonline">Test 2</option>
+      </select>
     </div>     
     <div id="radiodiv">
-		<fieldset>
-			<legend>Sex</legend>
-	      <input type="radio" id="male" name="sex" value="male" class="radio"/><label class="radio" for="male">Male</label>
-    	  <input type="radio" id="female" name="sex" value="female" class="radio"/><label class="radio" for="female">Female</label>
+	    <fieldset>
+	      <legend>Sex</legend>
+        <input type="radio" id="male" name="sex" value="male" class="radio required"/><label class="radio" for="male">Male</label>
+        <input type="radio" id="female" name="sex" value="female" class="radio required"/><label class="radio" for="female">Female</label>
+      </fieldset>
+    </div> 
+    <div id="radiodiv2">
+			<fieldset>
+				<legend>Age bracket</legend>
+	      <input type="radio" id="age1" name="age" value="20" class="radio"/><label class="radio required" for="age1">&lt; 100</label>
+    	  <input type="radio" id="age2" name="age" value="50" class="radio"/><label class="radio required" for="age2">100+</label>
     	</fieldset>
     </div> 
     <div id="checkboxdiv">
-    <fieldset>
-      <legend>Select Subscriptions</legend>
-      <input type="checkbox" id="css" name="news" value="css" class="checkbox"/><label class="checkbox" for="css">CSS</label>
-      <input type="checkbox" id="javascript" name="news" value="javascript" class="checkbox"/><label class="checkbox" for="javascript">JavaScript</label>
-      <input type="checkbox" id="usability" name="news" value="usability" class="checkbox"/><label class="checkbox" for="usability">Usability</label>
-    </fieldset>
+      <fieldset>
+        <legend>Select Subscriptions</legend>
+        <input type="checkbox" id="css" name="news" value="css" class="checkbox required"/><label class="checkbox" for="css">CSS</label>
+        <input type="checkbox" id="javascript" name="news" value="javascript" class="checkbox required"/><label class="checkbox" for="javascript">JavaScript</label>
+        <input type="checkbox" id="usability" name="news" value="usability" class="checkbox required"/><label class="checkbox" for="usability">Usability</label>
+      </fieldset>
+    </div>
+    <div id="checkboxdiv2">
+	    <fieldset>
+	      <legend>Source code</legend>
+	      <input type="checkbox" id="source" name="download" value="source" class="checkbox"/><label class="checkbox" for="source">Source</label>
+	      <input type="checkbox" id="compressed" name="download" value="compressed" class="checkbox"/><label class="checkbox" for="compressed">Compressed</label>
+	    </fieldset>
     </div> 
     <div id="submitdiv"><input id="submit" type="submit"/></div> 
   </form> 
