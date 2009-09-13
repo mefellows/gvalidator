@@ -643,6 +643,23 @@ ONEGEEK.forms.AbstractComboBox = function(field) {
     
     return false;
   }
+  
+  /**
+   * Override setup function.
+   */
+  this.setup = function() {
+    this.getMessageSpan();    
+    if(ENABLE_COMPACT_MESSAGES) {
+      this.createFieldStatusIcon(); 
+    }   
+    this.createRequiredSpan();  
+    this.validate();
+    
+    // Add events
+	util.addEvent(this.field, 'click', this.applyFieldValidation(this));
+	util.addEvent(this.field, 'click', this.applyContextInformation(this));
+	util.addEvent(this.field, 'change', this.applyFieldModification(this));  
+  }  
 }
 
 // Inherits from the AbstractFormField
@@ -793,7 +810,7 @@ ONEGEEK.forms.AbstractCheckbox = function(field) {
     // Add events to ALL of the items   
     var elements = document.forms[0].elements[this.field.name];
     for(i = 0; i < elements.length; i++) {
-		util.addEvent(elements[i], 'blur', this.applyFieldValidation(this));
+		util.addEvent(elements[i], 'click', this.applyFieldValidation(this));
 		util.addEvent(elements[i], 'click', this.applyContextInformation(this));
 		util.addEvent(elements[i], 'change', this.applyFieldModification(this));     
     }
@@ -870,7 +887,7 @@ ONEGEEK.forms.AbstractRadioButton = function(field) {
     // Add events to ALL of the items   
     var elements = document.forms[0].elements[this.field.name];
     for(i = 0; i < elements.length; i++) {
-		util.addEvent(elements[i], 'blur', this.applyFieldValidation(this));
+		util.addEvent(elements[i], 'click', this.applyFieldValidation(this));
 		util.addEvent(elements[i], 'click', this.applyContextInformation(this));
 		util.addEvent(elements[i], 'change', this.applyFieldModification(this));       
     }
@@ -1202,7 +1219,7 @@ formFieldFactory.registerFormField('genericrequiredtext', new ONEGEEK.forms.Gene
 ONEGEEK.forms.CaptchaTextField = function(field) {
   this.field = field;
   this.name = 'captcha';
-  this.regex = /^[A-Za-z0-9-_]$/g
+  this.regex = /^([A-Za-z0-9-_]+)$/g
   this.cleanRegex = /[<>\/\\\(\);]/g
   this.isRequired = true;
   
