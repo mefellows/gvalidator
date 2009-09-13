@@ -3,7 +3,7 @@
 // 
 // Author       - Matt Fellows, OneGeek Software (http://www.onegeek.com.au)
 // License      - GNU Public License v3 (license.txt)
-// Version      - $Id$
+// Version      - $Rev$
 // Dependancies - none
 ///////////////////////////////////////////////////////////////////////////////////
 
