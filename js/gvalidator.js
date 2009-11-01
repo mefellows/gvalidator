@@ -296,6 +296,13 @@ ONEGEEK.forms.AbstractFormField = function(field) {
   };
 
   /**
+   * Reset the form value and state.
+   */
+  this.reset = function() {
+    this.setModified(false);
+    this.setState(FIELD_STATUS_INFO);
+  }
+  /**
    * Set the state of the field. This will show the relevant icons and error messages for the field
    * 
    * @param {Object}
@@ -1177,6 +1184,12 @@ ONEGEEK.forms.Form = function(form) {
     return form;
   };
 
+  this.reset = function() {
+    for ( var i = 0; i < fields.length; i++) {
+      fields[i].reset();
+    }
+  }
+  
   /**
    * This function is used to validate the form
    */
@@ -1250,6 +1263,8 @@ ONEGEEK.forms.Form = function(form) {
    * Read the form XHTML object into an Chaos.forms.validation.Form Object and add the validation and context functions to the inputs
    */
   this.doForm = function() {
+    
+    
     if (form) {
       // Add validation events to INPUT fields
       var inputs = form.getElementsByTagName("input");
@@ -1271,6 +1286,7 @@ ONEGEEK.forms.Form = function(form) {
 
       // Add validate() call to form
       form.onsubmit = this.validate;
+      form.onreset = this.reset;
     }
   };
 
