@@ -1068,6 +1068,7 @@ formFieldFactory.registerFormField('email', new ONEGEEK.forms.EmailField());
 ONEGEEK.forms.GenericTextField = function(field) {
   this.field = field;
   this.name = 'generic';
+  this.regex = /^.*$/
   this.cleanRegex = /[<>\/\\\(\);]/g;
 
   /**
@@ -1080,19 +1081,6 @@ ONEGEEK.forms.GenericTextField = function(field) {
     return new ONEGEEK.forms.GenericTextField(field);
   };
 
-  /**
-   * Override the validate method: clean the field and always return true as this field is not required
-   */
-  this.validate = function() {
-    this.clean();
-    if (this.modified === true && this.field.value !== '') {
-      this.setState(FIELD_STATUS_OK);
-    } else {
-      this.setState(FIELD_STATUS_INFO);
-    }
-
-    return true;
-  };
 };
 
 // Subclass FormField
