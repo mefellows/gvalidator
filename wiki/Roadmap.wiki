@@ -1,4 +1,5 @@
-t#summary GValidator roadmap and current status.
+#summary GValidator roadmap and current status.
+#labels Phase-Requirements
 
 = Roadmap =
 
