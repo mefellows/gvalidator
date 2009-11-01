@@ -37,16 +37,6 @@ ONEGEEK.forms.GValidator.plugin = {
 };
 }}}
 
-
-{{{
-gvalidator.plugin.type = ip4address
-gvalidator.plugin.type.ip4address.extends = AbstractTextField
-gvalidator.plugin.type.ip4address.regex = /^\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b$/
-gvalidator.plugin.type.ip4address.cleanRegex = /[^0-9\.]/
-gvalidator.plugin.type.ip4address.errorMessage = Please enter a valid IP 4 Address i.e. 127.0.0.1
-...
-}}}
-
 *.ini Example*
 
 {{{
