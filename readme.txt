@@ -1,4 +1,4 @@
-GValidator (v0.4.20) - Javascript Validation library from OneGeek (http://www.onegeek.com.au)
+GValidator (v0.4.25) - Javascript Validation library from OneGeek (http://www.onegeek.com.au)
 
 ----------------------------------------------------------------
 
@@ -31,7 +31,7 @@ To use the library all you need to do is:
     
   * Include the gvalidator.js script file at the bottom of the page, just before </body>
   
-     i.e. <script type="text/javascript" src="js/gvalidator.js"></script>
+     i.e. <script type="text/javascript" src="/js/gvalidator.js"></script>
     
   * The form is given a class attribute of "gform" to activate GValidator
   * The fields for validation are given various obvious class names depending on how we wish to validate them. 
@@ -42,12 +42,22 @@ There is no embedded JavaScript functions or invalid semantic markup here, just 
     
 Also
 ----------------------------------------------------------------
-To get the latest, view or post bugs or learn more go to:
+To get the latest code, view or post bugs or learn more go to:
  * code.google.com/p/gvalidator
 
 
 GValidator Change Log
 ----------------------------------------------------------------
+0.4.30
+--
+Bug fix (Issue 4). Generic text field did not take 'required' flag into consideration, and is now more closely related to AbstractTextField, in that it has a universal 'this.regex' predicate.
+
+
+0.4.25
+--
+GValidator now resets along with a form reset.
+
+
 0.4.20
 --
  Added ability to use the 'required' class for validation purposes.
