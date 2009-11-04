@@ -14,7 +14,7 @@
 /**
  * Create the ONEGEEK global namespace object
  */
-if (typeof (ONEGEEK) == "undefined" || !window.ONEGEEK) {
+if (typeof (ONEGEEK) == "undefined") {
   /**
    * The ONEGEEK global namespace object. If ONEGEEK is already defined, the existing ONEGEEK object will not be overwritten so that defined namespaces are preserved.
    * 
@@ -32,24 +32,23 @@ if (typeof (ONEGEEK) == "undefined" || !window.ONEGEEK) {
  * Register the forms package namespace if it doesn't exist
  */
 if (typeof ONEGEEK.forms == "undefined") {
-  ONEGEEK.forms = {};
+  ONEGEEK.forms = {
+      // Constants: Edit to suit your environment
+      ENABLE_AUTO_FORM_VALIDATION: true,
+      ENABLE_COMPACT_MESSAGES: true, // Shows a link to a popup message if true, otherwise always shows the message
 
-  // Constants: Edit to suit your environment
-  ENABLE_AUTO_FORM_VALIDATION = true;
-  ENABLE_COMPACT_MESSAGES = true; // Shows a link to a popup message if true, otherwise always shows the message
+      // Image constants
+      ICON_ERROR: '../images/icons/cross.png',
+      ICON_OK: '../images/icons/tick.png',
+      ICON_INFO: '../images/icons/help.png',
+      ICON_ALERT: '../images/icons/icon_alert.gif',
 
-  // Image constants
-  ICON_DIR = '../images/icons/';
-  ICON_ERROR = ICON_DIR + 'cross.png';
-  ICON_OK = ICON_DIR + 'tick.png';
-  ICON_INFO = ICON_DIR + 'help.png';
-  ICON_ALERT = ICON_DIR + 'icon_alert.gif';
-
-  // Field Status Constants
-  FIELD_STATUS_ERROR = 1;
-  FIELD_STATUS_OK = 2;
-  FIELD_STATUS_INFO = 3;
-  FIELD_STATUS_NONE = 4;
+      // Field Status Constants
+      FIELD_STATUS_ERROR:1,
+      FIELD_STATUS_OK: 2,
+      FIELD_STATUS_INFO: 3,
+      FIELD_STATUS_NONE: 4,      
+  };
 }
 
 // ///////////////////////////////////////////
@@ -60,7 +59,17 @@ if (typeof ONEGEEK.forms == "undefined") {
  * General DOM manipulation utilities needed for this library
  */
 ONEGEEK.forms.DOMUtilities = function() {
-
+  if(typeof(Array.prototype['inArray']) == 'undefined') {
+    Array.prototype.inArray = function(needle) {  
+      for (key in this) {
+        if (this[key] === needle) {
+          return true;
+        }
+      }
+      return false;
+    }
+  }
+    
   /**
    * Get the x and y coordinates of an element relative to the top left corner of the window
    * 
@@ -183,11 +192,11 @@ var util = new ONEGEEK.forms.DOMUtilities();
  * Has the necessary functions to access, validate and clean a form elements' data 
  * This class should NOT be instantiated. 
  * Subclass and override these methods
+ * 
+ * @param DOMElement field   The actual DOM element this object is validating.
  */
 ONEGEEK.forms.AbstractFormField = function(field) {
-  this.name = ''; // name
   this.field = field || null; // DOM element
-
   this.successMessage = 'Completed'; // Messages displayed to user on successful completion
   this.errorMessage = 'Please complete'; // Messages displayed to user on completion error
   this.contextMessage = 'Please complete'; // Messages displayed to user when they are filling out field
@@ -197,7 +206,47 @@ ONEGEEK.forms.AbstractFormField = function(field) {
   this.statusLink = null; // The link for the status icon
   this.fieldStatus = null; // The status field span (<span><a><img/></a></span>)
   this.modified = false; // has the field been modified?
-
+  this.className = null; // The class name used for this element, could be many per type
+  var propOptions = ['errorMessage', 'successMessage', 'contextMessage', 'regex', 'cleanRegex']; // Options that can be overridden by plugins/translations
+  
+  /**
+   * Override the default options for a class.
+   * Used by translation service and plugins.
+   */
+  this.setOptions = function(options) {
+    // Override property values if allowed
+    for(item in options) {      
+      // Check if option is eligible
+      if (propOptions.inArray(item) === true ) {
+        this[item] = options[item];
+      }
+    }
+  };
+  
+  /**
+   * Set the class name that this element uses 
+   * for validation purposes.
+   */
+  this.setClassName = function(classname) {
+    this.className = classname;
+  }
+  
+  /**
+   * Set the language translations for this.
+   */
+  this.setLang = function(lang) {
+        
+    // Find translation file
+    var options = null;
+    try {
+      // Join the defaults with the specific class translations
+      this.setOptions(ONEGEEK.forms.GValidator.translation[lang]['defaults']);
+      this.setOptions(ONEGEEK.forms.GValidator.translation[lang][this.className]);      
+    } catch (e) {
+      // do nothing, default translation (EN, or 'defaults' should it exist) will kick in
+    }    
+  };
+  
   // Add the Icons, spans and validation events
   this.setup = function() {
     // Check for required class
@@ -205,7 +254,7 @@ ONEGEEK.forms.AbstractFormField = function(field) {
       this.isRequired = true;
     }
     this.getMessageSpan();
-    if (ENABLE_COMPACT_MESSAGES) {
+    if (ONEGEEK.forms.ENABLE_COMPACT_MESSAGES) {
       this.createFieldStatusIcon();
     }
     this.createRequiredSpan();
@@ -216,7 +265,7 @@ ONEGEEK.forms.AbstractFormField = function(field) {
     util.addEvent(this.field, 'click', this.applyContextInformation(this));
     util.addEvent(this.field, 'change', this.applyFieldModification(this));
   };
-
+  
   /**
    * Set the parent form. This is done on initialize
    * 
@@ -250,7 +299,7 @@ ONEGEEK.forms.AbstractFormField = function(field) {
 
       // If the field hasn't been used yet and there is a context message
       if (msgSpan && field.getModified() === false && field.getDOMElement.value === '' && field.getContextMessage()) {
-        field.setState(FIELD_STATUS_INFO);
+        field.setState(ONEGEEK.forms.FIELD_STATUS_INFO);
       }
     };
   };
@@ -267,18 +316,6 @@ ONEGEEK.forms.AbstractFormField = function(field) {
     return function() {
       field.validate();
     };
-  };
-
-  /**
-   * Get a new instance of this object This is used for the FormFieldFactory to lookup and create objects
-   * 
-   * @param {Object}
-   *          field The DOM element (field)
-   * @see ONEGEEK.forms.FormField
-   * @override
-   */
-  this.getNewInstance = function(field) {
-    return new ONEGEEK.forms.AbstractFormField(field);
   };
 
   /**
@@ -300,8 +337,9 @@ ONEGEEK.forms.AbstractFormField = function(field) {
    */
   this.reset = function() {
     this.setModified(false);
-    this.setState(FIELD_STATUS_INFO);
-  }
+    this.setState(ONEGEEK.forms.FIELD_STATUS_INFO);
+  };
+  
   /**
    * Set the state of the field. This will show the relevant icons and error messages for the field
    * 
@@ -317,7 +355,7 @@ ONEGEEK.forms.AbstractFormField = function(field) {
     util.removeClass(this.messageSpan, 'hidden');
 
     // Hide the message always if in COMPACT mode
-    if (ENABLE_COMPACT_MESSAGES) {
+    if (ONEGEEK.forms.ENABLE_COMPACT_MESSAGES) {
       util.addClass(this.messageSpan, 'hidden');
     }
 
@@ -327,29 +365,29 @@ ONEGEEK.forms.AbstractFormField = function(field) {
 
     var message = null;
     switch (state) {
-      case FIELD_STATUS_ERROR :
-        src = ICON_ALERT;
+      case ONEGEEK.forms.FIELD_STATUS_ERROR :
+        src = ONEGEEK.forms.ICON_ALERT;
         alt = 'There are errors with this field. Click for more info.';
         title = 'There are errors with this field. Click for more info.';
         message = this.errorMessage;
         util.addClass(this.messageSpan, 'error');
         break;
-      case FIELD_STATUS_OK :
-        src = ICON_OK;
+      case ONEGEEK.forms.FIELD_STATUS_OK :
+        src = ONEGEEK.forms.ICON_OK;
         alt = 'This field has been completed successfully.';
         title = 'This field has been completed successfully.';
         message = this.successMessage;
         util.addClass(this.messageSpan, 'ok');
         break;
       default :
-        src = ICON_INFO;
+        src = ONEGEEK.forms.ICON_INFO;
         alt = 'Click for more information about this field.';
         title = 'Click for more information about this field.';
         message = this.contextMessage;
         util.addClass(this.messageSpan, 'info');
     }
 
-    if (ENABLE_COMPACT_MESSAGES) {
+    if (ONEGEEK.forms.ENABLE_COMPACT_MESSAGES) {
       this.statusImg.src = src;
       this.statusImg.alt = alt;
       this.statusImg.title = title;
@@ -399,7 +437,7 @@ ONEGEEK.forms.AbstractFormField = function(field) {
 
       // Image
       this.statusImg = document.createElement('img');
-      this.statusImg.src = ICON_INFO;
+      this.statusImg.src = ONEGEEK.forms.ICON_INFO;
 
       // Link
       this.statusLink = document.createElement('a');
@@ -444,7 +482,7 @@ ONEGEEK.forms.AbstractFormField = function(field) {
       // None found - create a new one!
       var span = document.createElement('span');
 
-      if (!ENABLE_COMPACT_MESSAGES) {
+      if (!ONEGEEK.forms.ENABLE_COMPACT_MESSAGES) {
         span.className = 'msg icon info';
       } else {
         span.className = 'msg hidden info';
@@ -466,14 +504,14 @@ ONEGEEK.forms.AbstractFormField = function(field) {
    */
   this.validate = function() {    
     if (this.field.value) {
-      this.setState(FIELD_STATUS_OK);
+      this.setState(ONEGEEK.forms.FIELD_STATUS_OK);
       return true;
     }
 
     if (this.modified === false) {
-      this.setState(FIELD_STATUS_INFO);
+      this.setState(ONEGEEK.forms.FIELD_STATUS_INFO);
     } else {
-      this.setState(FIELD_STATUS_ERROR);
+      this.setState(ONEGEEK.forms.FIELD_STATUS_ERROR);
     }
 
     return false;
@@ -483,20 +521,6 @@ ONEGEEK.forms.AbstractFormField = function(field) {
    * Clean the field. This provides no default implementation and should be overriden
    */
   this.clean = function() {
-  };
-
-  /**
-   * Set the fields name
-   */
-  this.setName = function(name) {
-    this.name = name;
-  };
-
-  /**
-   * Get the fields name
-   */
-  this.getName = function() {
-    return this.name;
   };
 
   /**
@@ -563,7 +587,9 @@ ONEGEEK.forms.FormFieldFactory = function() {
    */
   this.lookupFormField = function(name, field) {
     if (formFieldRegister[name] != null) {
-      return formFieldRegister[name].getNewInstance(field);
+      var obj = new (window.ONEGEEK.forms[formFieldRegister[name]['class']])(field);
+      obj.setOptions(formFieldRegister[name].options); 
+      return obj;
     }
     return null;
   };
@@ -572,22 +598,22 @@ ONEGEEK.forms.FormFieldFactory = function() {
    * Register a FormField subclass with the factory
    * 
    * @param {Object}
-   *          name The name of elements class associated with the FormField i.e. 'firstname'
+   *          classname The name of the CSS class associated with the FormField i.e. 'firstname'
    * @param {Object}
-   *          field The FormField concrete subclass i.e. NameField
+   *          objectClass The FormField concrete subclass i.e. NameField
+   * @param {Object} OPTIONAL
+   *          options The options to pass in to the object 
    */
-  this.registerFormField = function(name, field) {
-    // Make sure the field is of type FormField
-    if (field instanceof ONEGEEK.forms.AbstractFormField) {
+  this.registerFormField = function(classname, object, options) {
       // Make sure the name doesn't collide
-      if (formFieldRegister[name] != null) {
-        alert('FormFieldFactory registerFormField(): Cannot register field, as this namespace is in use');
+      if (formFieldRegister[classname] != null) {
+        alert('FormFieldFactory registerFormField(): Cannot register field (' + classname + '), as this namespace is in use');
         return;
       }
-      formFieldRegister[name] = field;
-    } else {
-      alert('FormFieldFactory registerFormField(): Cannot register field, as this object is not of type FormField');
-    }
+      formFieldRegister[classname] = {
+          'class': object,
+          'options': options
+      };
   };
 };
 
@@ -605,20 +631,7 @@ var formFieldFactory = new ONEGEEK.forms.FormFieldFactory();
  *          field
  */
 ONEGEEK.forms.AbstractComboBox = function(field) {
-  this.name = "select";
   this.field = field;
-
-  /**
-   * Get a new instance of this object This is used for the FormFieldFactory to lookup and create objects
-   * 
-   * @param {Object}
-   *          field The DOM element (field)
-   * @see ONEGEEK.forms.FormField
-   * @override
-   */
-  this.getNewInstance = function(field) {
-    return new ONEGEEK.forms.AbstractComboBox(field);
-  };
 
   /**
    * Override the validation function Defaults to returning true if there is a value for the field and showing success otherwise it shows the context information icon
@@ -627,13 +640,13 @@ ONEGEEK.forms.AbstractComboBox = function(field) {
    */
   this.validate = function() {
     if (this.field.value && this.field.value !== '') {
-      this.setState(FIELD_STATUS_OK);
+      this.setState(ONEGEEK.forms.FIELD_STATUS_OK);
       return true;
     }
     if (this.modified === false || !this.isRequired) {
-      this.setState(FIELD_STATUS_INFO);
+      this.setState(ONEGEEK.forms.FIELD_STATUS_INFO);
     } else {
-      this.setState(FIELD_STATUS_ERROR);
+      this.setState(ONEGEEK.forms.FIELD_STATUS_ERROR);
     }
 
     return false;
@@ -648,7 +661,7 @@ ONEGEEK.forms.AbstractComboBox = function(field) {
       this.isRequired = true;
     }
     this.getMessageSpan();
-    if (ENABLE_COMPACT_MESSAGES) {
+    if (ONEGEEK.forms.ENABLE_COMPACT_MESSAGES) {
       this.createFieldStatusIcon();
     }
     this.createRequiredSpan();
@@ -665,38 +678,9 @@ ONEGEEK.forms.AbstractComboBox = function(field) {
 // Inherits from the AbstractFormField
 ONEGEEK.forms.AbstractComboBox.prototype = new ONEGEEK.forms.AbstractFormField();
 
-// ///////////////////////////////////////////
-// Start GenericComboBox Class Definition //
-// ///////////////////////////////////////////
-
-/**
- * Generic Combo Box provides a default implementation for a combo box
- * 
- * @param {Object}
- *          field
- */
-ONEGEEK.forms.GenericComboBox = function(field) {
-  this.field = field;
-
-  /**
-   * Get a new instance of this object This is used for the FormFieldFactory to lookup and create objects
-   * 
-   * @param {Object}
-   *          field The DOM element (field)
-   * @see ONEGEEK.forms.FormField
-   * @override
-   */
-  this.getNewInstance = function(field) {
-    return new ONEGEEK.forms.GenericComboBox(field);
-  };
-};
-
-// Inherits from the AbstractComboBox
-ONEGEEK.forms.GenericComboBox.prototype = new ONEGEEK.forms.AbstractComboBox();
-
 // Register the select class with the factory
-formFieldFactory.registerFormField('select', new ONEGEEK.forms.GenericComboBox());
-formFieldFactory.registerFormField('combo', new ONEGEEK.forms.GenericComboBox());
+formFieldFactory.registerFormField('select','AbstractComboBox');
+formFieldFactory.registerFormField('combo','AbstractComboBox');
 
 // ///////////////////////////////////////////
 // Start AbstractCheckbox Class Definition //
@@ -710,7 +694,6 @@ formFieldFactory.registerFormField('combo', new ONEGEEK.forms.GenericComboBox())
  */
 ONEGEEK.forms.AbstractCheckbox = function(field) {
   this.field = field;
-  this.name = "checkbox";
 
   /**
    * Override clean operation to do nothing
@@ -727,13 +710,13 @@ ONEGEEK.forms.AbstractCheckbox = function(field) {
     var elements = document.forms[0].elements[this.field.name];
     for (i = 0; i < elements.length; i++) {
       if (elements[i].checked) {
-        this.setState(FIELD_STATUS_OK);
+        this.setState(ONEGEEK.forms.FIELD_STATUS_OK);
         return true;
       } else {
         if (this.modified !== true || !this.isRequired) {
-          this.setState(FIELD_STATUS_INFO);
+          this.setState(ONEGEEK.forms.FIELD_STATUS_INFO);
         } else {
-          this.setState(FIELD_STATUS_ERROR);
+          this.setState(ONEGEEK.forms.FIELD_STATUS_ERROR);
         }
       }
     }
@@ -749,7 +732,7 @@ ONEGEEK.forms.AbstractCheckbox = function(field) {
       this.isRequired = true;
     }
     this.getMessageSpan();
-    if (ENABLE_COMPACT_MESSAGES) {
+    if (ONEGEEK.forms.ENABLE_COMPACT_MESSAGES) {
       this.createFieldStatusIcon();
     }
     this.createRequiredSpan();
@@ -768,35 +751,8 @@ ONEGEEK.forms.AbstractCheckbox = function(field) {
 // Inherits from the AbstractFormField
 ONEGEEK.forms.AbstractCheckbox.prototype = new ONEGEEK.forms.AbstractFormField();
 
-// //////////////////////////////////////////////
-// Start GenericCheckbox Class Definition //
-// //////////////////////////////////////////////
-
-/**
- * Generic CheckBox provides a default implementation for a Check box group
- * 
- * @param {Object}
- *          field
- */
-ONEGEEK.forms.GenericCheckbox = function(field) {
-  this.field = field;
-
-  /**
-   * Return a new instance of NameField
-   * 
-   * @param {Object}
-   *          field The DOM element (field)
-   */
-  this.getNewInstance = function(field) {
-    return new ONEGEEK.forms.GenericCheckbox(field);
-  };
-};
-
-// Inherits from the AbstractComboBox
-ONEGEEK.forms.GenericCheckbox.prototype = new ONEGEEK.forms.AbstractCheckbox();
-
 // Register the field type with FormFieldFactory
-formFieldFactory.registerFormField('checkbox', new ONEGEEK.forms.GenericCheckbox());
+formFieldFactory.registerFormField('checkbox','AbstractCheckbox');
 
 // ///////////////////////////////////////////
 // Start AbstractRadioButton Class Definition //
@@ -810,7 +766,6 @@ formFieldFactory.registerFormField('checkbox', new ONEGEEK.forms.GenericCheckbox
  */
 ONEGEEK.forms.AbstractRadioButton = function(field) {
   this.field = field;
-  this.name = "radio";
 
   /**
    * Override clean operation to do nothing
@@ -827,7 +782,7 @@ ONEGEEK.forms.AbstractRadioButton = function(field) {
       this.isRequired = true;
     }
     this.getMessageSpan();
-    if (ENABLE_COMPACT_MESSAGES) {
+    if (ONEGEEK.forms.ENABLE_COMPACT_MESSAGES) {
       this.createFieldStatusIcon();
     }
     this.createRequiredSpan();
@@ -850,13 +805,13 @@ ONEGEEK.forms.AbstractRadioButton = function(field) {
     var elements = document.forms[0].elements[this.field.name];
     for (i = 0; i < elements.length; i++) {
       if (elements[i].checked) {
-        this.setState(FIELD_STATUS_OK);
+        this.setState(ONEGEEK.forms.FIELD_STATUS_OK);
         return true;
       } else {
         if (this.modified !== true || !this.isRequired) {
-          this.setState(FIELD_STATUS_INFO);
+          this.setState(ONEGEEK.forms.FIELD_STATUS_INFO);
         } else {
-          this.setState(FIELD_STATUS_ERROR);
+          this.setState(ONEGEEK.forms.FIELD_STATUS_ERROR);
         }
       }
     }
@@ -867,35 +822,8 @@ ONEGEEK.forms.AbstractRadioButton = function(field) {
 // Inherits from the AbstractFormField
 ONEGEEK.forms.AbstractRadioButton.prototype = new ONEGEEK.forms.AbstractFormField();
 
-// //////////////////////////////////////////////
-// Start GenericRadioButton Class Definition //
-// //////////////////////////////////////////////
-
-/**
- * Generic Radio Button provides a default implementation for a Radio Button
- * 
- * @param {Object}
- *          field
- */
-ONEGEEK.forms.GenericRadioButton = function(field) {
-  this.field = field;
-
-  /**
-   * Return a new instance of NameField
-   * 
-   * @param {Object}
-   *          field The DOM element (field)
-   */
-  this.getNewInstance = function(field) {
-    return new ONEGEEK.forms.GenericRadioButton(field);
-  };
-};
-
-// Inherits from the AbstractComboBox
-ONEGEEK.forms.GenericRadioButton.prototype = new ONEGEEK.forms.AbstractRadioButton();
-
 // Register the field type with FormFieldFactory
-formFieldFactory.registerFormField('radio', new ONEGEEK.forms.GenericRadioButton());
+formFieldFactory.registerFormField('radio','AbstractRadioButton');
 
 // ////////////////////////////////////////////
 // Start AbstractTextField Class Definition //
@@ -908,6 +836,7 @@ formFieldFactory.registerFormField('radio', new ONEGEEK.forms.GenericRadioButton
  *          field The XHTML DOM field element
  */
 ONEGEEK.forms.AbstractTextField = function(field) {
+  this.field = field;
   this.regex = ''; // regex to match if ok
   this.cleanRegex = ''; // regex to clean naughty chars
   this.pattern = null; // Pattern that uses regex to match
@@ -925,18 +854,18 @@ ONEGEEK.forms.AbstractTextField = function(field) {
 
       // Check if field passes and show message
       if (validated) {
-        this.setState(FIELD_STATUS_OK);
+        this.setState(ONEGEEK.forms.FIELD_STATUS_OK);
       } else {
-        this.setState(FIELD_STATUS_ERROR);
+        this.setState(ONEGEEK.forms.FIELD_STATUS_ERROR);
       }
       return validated;
     }
     
     // Show info if empty and not modified or not required
     if (this.modified === false || this.isRequired === false) {
-      this.setState(FIELD_STATUS_INFO);
+      this.setState(ONEGEEK.forms.FIELD_STATUS_INFO);
     } else {
-      this.setState(FIELD_STATUS_ERROR);
+      this.setState(ONEGEEK.forms.FIELD_STATUS_ERROR);
     }
 
     return false;
@@ -962,30 +891,19 @@ ONEGEEK.forms.AbstractTextField.prototype = new ONEGEEK.forms.AbstractFormField(
  */
 ONEGEEK.forms.NameField = function(field) {
   this.field = field;
-  this.name = 'name';
   this.regex = /^([a-zA-Z\-\'\s]{2,30})$/g;
   this.cleanRegex = /[^a-zA-Z\-\'\s]/g;
   this.errorMessage = 'Your name must be between 2 and 30 characters';
   this.contextMessage = 'We would like to call you by your name';
-
-  /**
-   * Return a new instance of NameField
-   * 
-   * @param {Object}
-   *          field The DOM element (field)
-   */
-  this.getNewInstance = function(field) {
-    return new ONEGEEK.forms.NameField(field);
-  };
 };
 
 // Subclass FormField
 ONEGEEK.forms.NameField.prototype = new ONEGEEK.forms.AbstractTextField();
 
 // Register the field types with FormFieldFactory
-formFieldFactory.registerFormField('firstname', new ONEGEEK.forms.NameField());
-formFieldFactory.registerFormField('lastname', new ONEGEEK.forms.NameField());
-formFieldFactory.registerFormField('name', new ONEGEEK.forms.NameField());
+formFieldFactory.registerFormField('firstname','NameField');
+formFieldFactory.registerFormField('lastname','NameField');
+formFieldFactory.registerFormField('name','NameField');
 
 // ///////////////////////////////////////////
 // Start PhoneField Class Definition //
@@ -996,28 +914,17 @@ formFieldFactory.registerFormField('name', new ONEGEEK.forms.NameField());
  */
 ONEGEEK.forms.PhoneField = function(field) {
   this.field = field;
-  this.name = 'phone';
   this.regex = /^([0-9]{8,10})$/g;
   this.cleanRegex = /[^0-9]/g;
   this.errorMessage = 'Your phone number needs to be at least 8 digits long i.e. 03 1234 5678';
   this.contextMessage = this.errorMessage;
-
-  /**
-   * Return a new instance of NameField
-   * 
-   * @param {Object}
-   *          field The DOM element (field)
-   */
-  this.getNewInstance = function(field) {
-    return new ONEGEEK.forms.PhoneField(field);
-  };
 };
 
 // Subclass FormField
 ONEGEEK.forms.PhoneField.prototype = new ONEGEEK.forms.AbstractTextField();
 
 // Register the field type with FormFieldFactory
-formFieldFactory.registerFormField('phone', new ONEGEEK.forms.PhoneField());
+formFieldFactory.registerFormField('phone','PhoneField');
 
 // ///////////////////////////////////////////
 // Start EmailField Class Definition //
@@ -1030,20 +937,9 @@ formFieldFactory.registerFormField('phone', new ONEGEEK.forms.PhoneField());
  */
 ONEGEEK.forms.EmailField = function(field) {
   this.field = field;
-  this.name = 'email';
   this.regex = /^[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,4}$/i;
   this.errorMessage = 'Please enter a valid email address i.e. user@domain.com';
   this.contextMessage = 'Your email address will be kept confidential';
-
-  /**
-   * Return a new instance of NameField
-   * 
-   * @param {Object}
-   *          field The DOM element (field)
-   */
-  this.getNewInstance = function(field) {
-    return new ONEGEEK.forms.EmailField(field);
-  };
 
   /**
    * Override clean() method to do nothing
@@ -1056,7 +952,7 @@ ONEGEEK.forms.EmailField = function(field) {
 ONEGEEK.forms.EmailField.prototype = new ONEGEEK.forms.AbstractTextField();
 
 // Register the field type with FormFieldFactory
-formFieldFactory.registerFormField('email', new ONEGEEK.forms.EmailField());
+formFieldFactory.registerFormField('email','EmailField');
 
 // ///////////////////////////////////////////
 // Start GenericTextField Class Definition //
@@ -1067,28 +963,16 @@ formFieldFactory.registerFormField('email', new ONEGEEK.forms.EmailField());
  */
 ONEGEEK.forms.GenericTextField = function(field) {
   this.field = field;
-  this.name = 'generic';
-  this.regex = /^.*$/
+  this.regex = /^.*$/;
   this.cleanRegex = /[<>\/\\\(\);]/g;
-
-  /**
-   * Return a new instance of NameField
-   * 
-   * @param {Object}
-   *          field The DOM element (field)
-   */
-  this.getNewInstance = function(field) {
-    return new ONEGEEK.forms.GenericTextField(field);
-  };
-
 };
 
 // Subclass FormField
 ONEGEEK.forms.GenericTextField.prototype = new ONEGEEK.forms.AbstractTextField();
 
 // Register the field types with FormFieldFactory
-formFieldFactory.registerFormField('text', new ONEGEEK.forms.GenericTextField());
-formFieldFactory.registerFormField('generictext', new ONEGEEK.forms.GenericTextField());
+formFieldFactory.registerFormField('text','GenericTextField');
+formFieldFactory.registerFormField('generictext','GenericTextField');
 
 // ///////////////////////////////////////////
 // Start CaptchaTextField Class Definition //
@@ -1099,29 +983,18 @@ formFieldFactory.registerFormField('generictext', new ONEGEEK.forms.GenericTextF
  */
 ONEGEEK.forms.CaptchaTextField = function(field) {
   this.field = field;
-  this.name = 'captcha';
   this.regex = /^([A-Za-z0-9\-_]+)$/g;
   this.cleanRegex = /[<>\/\\\(\);]/g;
   this.successMessage = "Thankyou...";
   this.errorMessage = "Please complete the security check";
   this.contextMessage = "This prevents us from spam";
-
-  /**
-   * Return a new instance of NameField
-   * 
-   * @param {Object}
-   *          field The DOM element (field)
-   */
-  this.getNewInstance = function(field) {
-    return new ONEGEEK.forms.CaptchaTextField(field);
-  };
 };
 
 // Subclass FormField
 ONEGEEK.forms.CaptchaTextField.prototype = new ONEGEEK.forms.AbstractTextField();
 
 // Register the field types with FormFieldFactory
-formFieldFactory.registerFormField('captcha', new ONEGEEK.forms.CaptchaTextField());
+formFieldFactory.registerFormField('captcha','CaptchaTextField');
 
 // ///////////////////////////////////////////
 // Start RecaptchaTextField Class Definition //
@@ -1132,18 +1005,7 @@ formFieldFactory.registerFormField('captcha', new ONEGEEK.forms.CaptchaTextField
  */
 ONEGEEK.forms.RecaptchaTextField = function(field) {
   this.field = field;
-  this.name = 'recaptcha';
   this.contextMessage = "Need some <a href='javascript:Recaptcha.showhelp()'>help</a>? Get another <a href='javascript:Recaptcha.reload()'>CAPTCHA</a>";
-
-  /**
-   * Return a new instance of NameField
-   * 
-   * @param {Object}
-   *          field The DOM element (field)
-   */
-  this.getNewInstance = function(field) {
-    return new ONEGEEK.forms.RecaptchaTextField(field);
-  };
 };
 
 // Subclass CaptchaTextField
@@ -1151,7 +1013,7 @@ ONEGEEK.forms.RecaptchaTextField.prototype = new ONEGEEK.forms.CaptchaTextField(
 
 // Register the field types with FormFieldFactory
 formFieldFactory.registerFormField('recaptcha_response_field', new ONEGEEK.forms.RecaptchaTextField());
-formFieldFactory.registerFormField('recaptcha', new ONEGEEK.forms.RecaptchaTextField());
+formFieldFactory.registerFormField('recaptcha','RecaptchaTextField');
 
 // ///////////////////////////////////////////
 // Start Form Class Definition //
@@ -1167,6 +1029,7 @@ ONEGEEK.forms.Form = function(form) {
   var fields = new Array(); // Array of fields
   form = form || document.getElementById(form) || null; // DOM form object
   var completed = false;
+  this.lang = null;
 
   this.getForm = function() {
     return form;
@@ -1176,7 +1039,7 @@ ONEGEEK.forms.Form = function(form) {
     for ( var i = 0; i < fields.length; i++) {
       fields[i].reset();
     }
-  }
+  };
   
   /**
    * This function is used to validate the form
@@ -1251,9 +1114,11 @@ ONEGEEK.forms.Form = function(form) {
    * Read the form XHTML object into an Chaos.forms.validation.Form Object and add the validation and context functions to the inputs
    */
   this.doForm = function() {
-    
-    
+        
     if (form) {
+      // Set language if not EN
+      this.lang = (form.lang !== null && form.lang != 'EN') ? form.lang : null;
+      
       // Add validation events to INPUT fields
       var inputs = form.getElementsByTagName("input");
       for ( var i = 0; i < inputs.length; i++) {
@@ -1273,8 +1138,8 @@ ONEGEEK.forms.Form = function(form) {
       }
 
       // Add validate() call to form
-      form.onsubmit = this.validate;
-      form.onreset = this.reset;
+      util.addEvent(form, 'submit', this.validate);
+      util.addEvent(form, 'reset', this.reset);
     }
   };
 
@@ -1310,8 +1175,16 @@ ONEGEEK.forms.Form = function(form) {
           fieldObject = formFieldFactory.lookupFormField(classname, field);
         }
 
+        
         // Did we find a field object?
         if (fieldObject) {
+          // Set class name assigned to it
+          fieldObject.setClassName(classname);
+          
+          // Set language
+          if(this.lang !== null) {
+            fieldObject.setLang(this.lang); 
+          }
           
           // Add validation and context functions to field
           var element = fieldObject.getDOMElement();
@@ -1338,6 +1211,24 @@ ONEGEEK.forms.Form = function(form) {
  *          form The form XHTML DOM element
  */
 ONEGEEK.forms.GValidator = function() {
+  
+  /**
+   * Read in any config options.
+   */
+  this.readOptions = function() {
+    
+  };
+  
+  /**
+   * Read in any user-defined plug-ins.
+   * Must come from a user created ONEGEEK.forms.GValidator.plugin variable.
+   */  
+  this.readPlugins = function() {
+    for(item in ONEGEEK.forms.GValidator.plugins) {
+      formFieldFactory.registerFormField(item,ONEGEEK.forms.GValidator.plugins[item]._extends, ONEGEEK.forms.GValidator.plugins[item]);
+    }
+  };
+  
   /**
    * Automatically apply form validation functions to any 'autoform'
    */
@@ -1353,8 +1244,20 @@ ONEGEEK.forms.GValidator = function() {
       }
     }
   };
+  
+  // Read in config options?
+  this.readOptions();
+  
+  // Initialize Plugins
+  this.readPlugins();
 };
 
+// Check translation NS
+if(typeof(ONEGEEK.forms.GValidator.translation) == 'undefined') {
+  ONEGEEK.forms.GValidator.translation = {};
+}
+
+// Add load event function
 function addLoadEventGVal(func) {
   var oldonload = window.onload;
   if (typeof window.onload != 'function') {
@@ -1368,11 +1271,12 @@ function addLoadEventGVal(func) {
     };
   }
 }
+
 // If auto form validation is enabled,
 // automatically validate forms on load.
-if (ENABLE_AUTO_FORM_VALIDATION) {
-  addLoadEventGVal( function() {
+addLoadEventGVal( function() {
+  if(ONEGEEK.forms.ENABLE_AUTO_FORM_VALIDATION) {
     gvalidator = new ONEGEEK.forms.GValidator();
     gvalidator.autoApplyFormValidation();
-  });
-}
+  }
+});
