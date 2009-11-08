@@ -13,6 +13,7 @@ Currently, GValidator is a stand-alone library with no dependencies on any other
   * Ability to specify formatting mask options (Currency, decimals spring to mind) and have the data aligned to the specification i.e. `$__,__.__` or something similar
   * Ability to tailor how messages are displayed on a given field, such as specifying a container for all message, inline, using different elements etc.
   * Internationalization of error messages
+  * Templated message types with custom messages (i.e. different templates messages for EMPTY, INVALID... fields)
   * Configuration based validation rules (see below)
   * Configuration parameters separated from main code base
 
