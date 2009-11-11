@@ -55,7 +55,7 @@ gvalidator.plugin.type.ip4address.errorMessage = Please enter a valid IP 4 Addre
 === Rules Based Validation via Configuration ===
 Form validation is often dependent on user choices, for example, a form may ask the user a segmentation question at the beginning which will then disclose certain related fields. In this case, some fields become required and others will become hidden and are not required.
 
-GValidator could potentially read in from a config file (similar to the one proposed above) triggered by a class name at the <form> level, which contains the validation rules for different user choices.
+GValidator could potentially read in from a config file (similar to the one proposed above) triggered by a class name at the form level, which contains the validation rules for different user choices.
 
 Following this same concept, it is entirely possible to build a framework that will fire off events to change the display and perform other logical functions on user actions.
 
