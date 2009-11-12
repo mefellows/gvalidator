@@ -33,21 +33,32 @@ if (typeof (ONEGEEK) == "undefined") {
  */
 if (typeof ONEGEEK.forms == "undefined") {
   ONEGEEK.forms = {
-      // Constants: Edit to suit your environment
-      ENABLE_AUTO_FORM_VALIDATION: true,
-      ENABLE_COMPACT_MESSAGES: true, // Shows a link to a popup message if true, otherwise always shows the message
-
-      // Image constants
-      ICON_ERROR: '../images/icons/cross.png',
-      ICON_OK: '../images/icons/tick.png',
-      ICON_INFO: '../images/icons/help.png',
-      ICON_ALERT: '../images/icons/icon_alert.gif',
-
       // Field Status Constants
+      FIELD_STATUS_RESET: 0,
       FIELD_STATUS_ERROR:1,
       FIELD_STATUS_OK: 2,
       FIELD_STATUS_INFO: 3,
-      FIELD_STATUS_NONE: 4,      
+      FIELD_STATUS_NONE: 4,
+      FIELD_STATUS_EMPTY: 5      
+  };
+}
+
+// Update native Function and Array prototypes
+Function.prototype.gbind = function(object, args) {
+  var func = this;
+  return function() {
+    return func.apply(object, args);
+  };
+}
+;
+if(typeof(Array.prototype.inArray) == 'undefined') {
+  Array.prototype.inArray = function(needle) {  
+    for (key in this) {
+      if (this[key] === needle) {
+        return true;
+      }
+    }
+    return false;
   };
 }
 
@@ -59,16 +70,6 @@ if (typeof ONEGEEK.forms == "undefined") {
  * General DOM manipulation utilities needed for this library
  */
 ONEGEEK.forms.DOMUtilities = function() {
-  if(typeof(Array.prototype['inArray']) == 'undefined') {
-    Array.prototype.inArray = function(needle) {  
-      for (key in this) {
-        if (this[key] === needle) {
-          return true;
-        }
-      }
-      return false;
-    }
-  }
     
   /**
    * Get the x and y coordinates of an element relative to the top left corner of the window
@@ -100,13 +101,13 @@ ONEGEEK.forms.DOMUtilities = function() {
   this.togglePopup = function(source, target) {
     var div = target;
     var coords = this.findPos(source);
-    if (div.style.display == 'block') {
-      div.style.display = 'none';
+    if (!this.hasClass(div, 'hidden')) {
+      this.addClass(div, 'hidden');
     } else {
       div.style.position = 'absolute';
       div.style.left = coords[0] + 10 + 'px';
       div.style.top = coords[1] - 6 + 'px';
-      div.style.display = 'block';
+      this.removeClass(div, 'hidden');
     }
   };
 
@@ -118,7 +119,7 @@ ONEGEEK.forms.DOMUtilities = function() {
    * @param {Object}
    *          class The class to check against the element
    */
-  this.doesElementBelongToClass = function(element, className) {
+  this.hasClass = function(element, className) {
     var classes = element.className;
     var pattern = new RegExp(className, 'g');
 
@@ -154,7 +155,7 @@ ONEGEEK.forms.DOMUtilities = function() {
   this.addClass = function(element, className) {
     var classes = element.className;
 
-    if (!this.doesElementBelongToClass(element, className)) {
+    if (!this.hasClass(element, className)) {
       element.className += " " + className;
     }
   };
@@ -177,10 +178,19 @@ ONEGEEK.forms.DOMUtilities = function() {
     }
   };
 
+  /**
+   * Dynamically load a JS file.
+   */
+  this.load = function(script) {    
+       var e = document.createElement("script");
+       e.src = script;
+       e.type="text/javascript";
+       document.getElementsByTagName("head")[0].appendChild(e);    
+  }
 };
 
 // Create a global (quasi-singleton) instance of the factory
-var util = new ONEGEEK.forms.DOMUtilities();
+var _du = new ONEGEEK.forms.DOMUtilities();
 
 // ///////////////////////////////////////////
 // Start FormField Class Definition //
@@ -197,17 +207,20 @@ var util = new ONEGEEK.forms.DOMUtilities();
  */
 ONEGEEK.forms.AbstractFormField = function(field) {
   this.field = field || null; // DOM element
-  this.successMessage = 'Completed'; // Messages displayed to user on successful completion
-  this.errorMessage = 'Please complete'; // Messages displayed to user on completion error
-  this.contextMessage = 'Please complete'; // Messages displayed to user when they are filling out field
-  this.messageSpan = null; // The span to display field errors, messages, validation etc.
+  this.successMsg = 'Completed'; // Messages displayed to user on successful completion
+  this.errorMsg = 'Please complete'; // Messages displayed to user on completion error
+  this.contextMsg = 'Please complete'; // Messages displayed to user when they are filling out field
+  this.emptyMsg = '%field% is required, please complete';
+  this.msgSpan = null; // The span to display field errors, messages, validation etc.
   this.isRequired = false; // Is this field required?
   this.statusImg = null; // The image for the status icon span
   this.statusLink = null; // The link for the status icon
   this.fieldStatus = null; // The status field span (<span><a><img/></a></span>)
   this.modified = false; // has the field been modified?
   this.className = null; // The class name used for this element, could be many per type
-  var propOptions = ['errorMessage', 'successMessage', 'contextMessage', 'regex', 'cleanRegex']; // Options that can be overridden by plugins/translations
+  var propOptions = ['errorMsg','emptyMsg', 'successMsg', 'contextMsg', 'regex', 'cleanRegex']; // Options that can be overridden by plugins/translations
+  this.form = null; // The parent ONEGEEK.forms.form class
+  this.state = null;
   
   /**
    * Override the default options for a class.
@@ -236,11 +249,11 @@ ONEGEEK.forms.AbstractFormField = function(field) {
    */
   this.setLang = function(lang) {
         
-    // Find translation file
+    // Find translation file, even for EN if provided
     var options = null;
     try {
       // Join the defaults with the specific class translations
-      this.setOptions(ONEGEEK.forms.GValidator.translation[lang]['defaults']);
+      this.setOptions(ONEGEEK.forms.GValidator.translation[lang].defaults);
       this.setOptions(ONEGEEK.forms.GValidator.translation[lang][this.className]);      
     } catch (e) {
       // do nothing, default translation (EN, or 'defaults' should it exist) will kick in
@@ -250,27 +263,71 @@ ONEGEEK.forms.AbstractFormField = function(field) {
   // Add the Icons, spans and validation events
   this.setup = function() {
     // Check for required class
-    if (util.doesElementBelongToClass(this.field, 'required')) {
+    if (_du.hasClass(this.field, 'required')) {
       this.isRequired = true;
     }
-    this.getMessageSpan();
-    if (ONEGEEK.forms.ENABLE_COMPACT_MESSAGES) {
+    this.getMsgSpan();
+    if (this.form.options.eMsgFormat == 'compact') {
       this.createFieldStatusIcon();
     }
     this.createRequiredSpan();
     this.validate();
 
     // Add events
-    util.addEvent(this.field, 'blur', this.applyFieldValidation(this));
-    util.addEvent(this.field, 'click', this.applyContextInformation(this));
-    util.addEvent(this.field, 'change', this.applyFieldModification(this));
+    _du.addEvent(this.field, 'blur', this.applyFieldValidation(this));
+    _du.addEvent(this.field, 'click', this.applyContextInformation(this));
+    _du.addEvent(this.field, 'change', this.applyFieldModification(this));
+    
+    this.setLabel();
+    
   };
+  
+  this.setLabel = function() {
+    // Extract the label from the form, or use 'Field' otherwise
+    try {
+
+      if (this.field.type != 'checkbox' && this.field.type != 'radio') {
+        var labels = this.form.getForm().getElementsByTagName('label');
+        for(var i = 0; i < labels.length; i++) {
+          if(labels[i].getAttribute('for') == this.field.id) {
+            this.label = labels[i].innerHTML;
+            return true;
+          }
+        }
+      }
+     
+      // Get label from fieldset?
+      var parent = this.field.parentNode;
+      var tagName = '';
+      do {  
+        tagName = parent.tagName.toLowerCase();
+        console.log(tagName)
+        if(tagName == 'fieldset') {
+          var legend = parent.getElementsByTagName('legend');
+          console.log(legend)
+          if (legend.length > 0) {
+//            console.log(legend[0].innerHTML)
+            this.label = legend[0].innerHTML;
+            console.log('fond!!!' + this.label)
+            return true;
+          }
+        }
+        parent = parent.parentNode;
+      } while(parent && tagName != 'form');
+      
+    } catch(e) {
+      this.label = 'Field';
+      return false;
+    }
+    this.label = 'Field'
+    return false;
+  }
   
   /**
    * Set the parent form. This is done on initialize
    * 
    * @param The
-   *          parent Form DOM element
+   *          parent Form ONEGEEK.forms.form element
    */
   this.setForm = function(form) {
     this.form = form;
@@ -295,10 +352,10 @@ ONEGEEK.forms.AbstractFormField = function(field) {
    */
   this.applyContextInformation = function(field) {
     return function() {
-      var msgSpan = field.getMessageSpan(); // Span field to display info about state of field
+      var msgSpan = field.getMsgSpan(); // Span field to display info about state of field
 
       // If the field hasn't been used yet and there is a context message
-      if (msgSpan && field.getModified() === false && field.getDOMElement.value === '' && field.getContextMessage()) {
+      if (msgSpan && field.getModified() === false && field.getDOMElement.value === '' && field.getContextMsg()) {
         field.setState(ONEGEEK.forms.FIELD_STATUS_INFO);
       }
     };
@@ -337,7 +394,7 @@ ONEGEEK.forms.AbstractFormField = function(field) {
    */
   this.reset = function() {
     this.setModified(false);
-    this.setState(ONEGEEK.forms.FIELD_STATUS_INFO);
+    this.setState(ONEGEEK.forms.FIELD_STATUS_RESET);
   };
   
   /**
@@ -347,17 +404,12 @@ ONEGEEK.forms.AbstractFormField = function(field) {
    *          state The fields' state. Can be one of: FIELD_STATUS_ERROR, FIELD_STATUS_OK, FIELD_STATUS_INFO
    */
   this.setState = function(state) {
-
+    this.state = state;
+    
     // Remove previous messages
-    util.removeClass(this.messageSpan, 'error');
-    util.removeClass(this.messageSpan, 'info');
-    util.removeClass(this.messageSpan, 'ok');
-    util.removeClass(this.messageSpan, 'hidden');
-
-    // Hide the message always if in COMPACT mode
-    if (ONEGEEK.forms.ENABLE_COMPACT_MESSAGES) {
-      util.addClass(this.messageSpan, 'hidden');
-    }
+    _du.removeClass(this.msgSpan, 'error');
+    _du.removeClass(this.msgSpan, 'info');
+    _du.removeClass(this.msgSpan, 'ok');
 
     var src = '';
     var title = '';
@@ -365,29 +417,42 @@ ONEGEEK.forms.AbstractFormField = function(field) {
 
     var message = null;
     switch (state) {
-      case ONEGEEK.forms.FIELD_STATUS_ERROR :
-        src = ONEGEEK.forms.ICON_ALERT;
+      case ONEGEEK.forms.FIELD_STATUS_EMPTY:
+        src = this.form.options.icons.error;
         alt = 'There are errors with this field. Click for more info.';
         title = 'There are errors with this field. Click for more info.';
-        message = this.errorMessage;
-        util.addClass(this.messageSpan, 'error');
+        // Replace vars in message
+        this.emptyMsg = this.emptyMsg.replace('%field%', "'" + this.label + "'");
+        message = this.emptyMsg;
+        _du.addClass(this.msgSpan, 'error');
         break;
-      case ONEGEEK.forms.FIELD_STATUS_OK :
-        src = ONEGEEK.forms.ICON_OK;
+      case ONEGEEK.forms.FIELD_STATUS_ERROR:
+        src = this.form.options.icons.error;
+        alt = 'There are errors with this field. Click for more info.';
+        title = 'There are errors with this field. Click for more info.';
+        message = this.errorMsg;
+        _du.addClass(this.msgSpan, 'error');
+        break;
+      case ONEGEEK.forms.FIELD_STATUS_OK:
+        src = this.form.options.icons.ok;
         alt = 'This field has been completed successfully.';
         title = 'This field has been completed successfully.';
-        message = this.successMessage;
-        util.addClass(this.messageSpan, 'ok');
+        message = this.successMsg;
+        _du.addClass(this.msgSpan, 'ok');
         break;
+      case ONEGEEK.forms.FIELD_STATUS_RESET:
+        // Hide the message if in COMPACT mode
+        if (this.form.options.eMsgFormat == 'compact') {
+          _du.addClass(this.msgSpan, 'hidden');
+        }        
       default :
-        src = ONEGEEK.forms.ICON_INFO;
+        src = this.form.options.icons.info;
         alt = 'Click for more information about this field.';
         title = 'Click for more information about this field.';
-        message = this.contextMessage;
-        util.addClass(this.messageSpan, 'info');
+        message = this.contextMsg;
+        _du.addClass(this.msgSpan, 'info');
     }
-
-    if (ONEGEEK.forms.ENABLE_COMPACT_MESSAGES) {
+    if (this.form.options.eMsgFormat == 'compact') {
       this.statusImg.src = src;
       this.statusImg.alt = alt;
       this.statusImg.title = title;
@@ -395,9 +460,9 @@ ONEGEEK.forms.AbstractFormField = function(field) {
 
     // Display / Hide Message
     if (message !== null) {
-      this.messageSpan.innerHTML = message;
+      this.msgSpan.innerHTML = message;
     } else {
-      util.addClass(this.messageSpan, 'hidden');
+      _du.addClass(this.msgSpan, 'hidden');
     }
   };
 
@@ -405,16 +470,24 @@ ONEGEEK.forms.AbstractFormField = function(field) {
    * If the field is required, show the asterisk
    */
   this.createRequiredSpan = function() {
-    var span = document.createElement('span');
-    span.className = 'required';
-    if (this.isRequired) {
-      span.innerHTML = '*';
-    } else {
-      span.innerHTML = '&nbsp;&nbsp;';
-    }
+    // Show the span?
+    if(this.form.options.reqShow) {
 
-    // Insert before field
-    this.field.parentNode.insertBefore(span, this.field.parentNode.firstChild);
+      var span = document.createElement('span');
+      span.className = 'required';
+      if (this.isRequired) {
+        span.innerHTML = this.form.options.reqChar;
+      } else {
+        span.innerHTML = ' &nbsp;';
+      }
+  
+      // Insert before field
+      if(this.form.options.reqPlacement == 'before') {
+        this.field.parentNode.insertBefore(span, this.field.parentNode.firstChild);
+      } else {
+        this.field.parentNode.insertBefore(span, this.field);
+      }
+    }
   };
 
   /**
@@ -425,7 +498,7 @@ ONEGEEK.forms.AbstractFormField = function(field) {
       // Get the icon object
       var msgSpans = this.field.parentNode.getElementsByTagName('span');
       for ( var i = 0; i < msgSpans.length; i++) {
-        if (util.doesElementBelongToClass(msgSpans[i], 'fieldstatus')) {
+        if (_du.hasClass(msgSpans[i], 'fieldstatus')) {
           this.fieldStatus = msgSpans[i];
           return this.fieldStatus;
         }
@@ -437,12 +510,15 @@ ONEGEEK.forms.AbstractFormField = function(field) {
 
       // Image
       this.statusImg = document.createElement('img');
-      this.statusImg.src = ONEGEEK.forms.ICON_INFO;
+      this.statusImg.src = this.form.options.icons.info;
 
       // Link
       this.statusLink = document.createElement('a');
       // this.statusLink.href = "";
-      this.statusLink.onclick = addPopupToggle(this.statusLink, this.messageSpan);
+      _du.addEvent(this.statusLink, this.form.options.eMsgEventOn, addPopupToggle(this.statusLink, this.msgSpan));
+      if(this.form.options.eMsgEventOff !== null) {
+        _du.addEvent(this.statusLink, this.form.options.eMsgEventOff, addPopupToggle(this.statusLink, this.msgSpan));
+      }
 
       // Place the image inside the link, then the link in the span
       this.statusLink.appendChild(this.statusImg);
@@ -450,7 +526,7 @@ ONEGEEK.forms.AbstractFormField = function(field) {
 
       // Append span: Needs to go between field and message span
       // Get the message span and insert node before it
-      this.fieldStatus = this.field.parentNode.insertBefore(span, this.getMessageSpan());
+      this.fieldStatus = this.field.parentNode.insertBefore(span, this.getMsgSpan());
       return this.fieldStatus;
     } else {
       return this.fieldStatus;
@@ -460,41 +536,38 @@ ONEGEEK.forms.AbstractFormField = function(field) {
   /**
    * Get the function that hides/shows the message span
    */
-  var addPopupToggle = function(statusLink, messageSpan) {
+  var addPopupToggle = function(statusLink, msgSpan) {
     return function() {
-      util.togglePopup(statusLink, messageSpan); // Show hide context information on click
+      _du.togglePopup(statusLink, msgSpan); // Show hide context information on click
     };
   };
 
   /**
    * Get the fields associated message span
    */
-  this.getMessageSpan = function() {
-    if (this.messageSpan === null) {
+  this.getMsgSpan = function() {
+    if (this.msgSpan === null) {
       // Get the MsgSpan object - This is where the form field gets a message
       var msgSpans = this.field.parentNode.getElementsByTagName('span');
       for ( var i = 0; i < msgSpans.length; i++) {
-        if (util.doesElementBelongToClass(msgSpans[i], 'msg')) {
-          this.messageSpan = msgSpans[i];
-          return this.messageSpan;
+        if (_du.hasClass(msgSpans[i], 'msg')) {
+          this.msgSpan = msgSpans[i];
+          return this.msgSpan;
         }
       }
       // None found - create a new one!
       var span = document.createElement('span');
-
-      if (!ONEGEEK.forms.ENABLE_COMPACT_MESSAGES) {
-        span.className = 'msg icon info';
-      } else {
+      if (this.form.options.eMsgFormat == 'compact') {
         span.className = 'msg hidden info';
+      } else {
+        span.className = 'msg icon info';
       }
-      span.innerHTML = this.contextMessage;
+      span.innerHTML = this.contextMsg;
 
       // Append span
-      this.messageSpan = this.field.parentNode.appendChild(span);
-      return this.messageSpan;
-    } else {
-      return this.messageSpan;
+      this.msgSpan = this.field.parentNode.appendChild(span);
     }
+    return this.msgSpan;    
   };
 
   /**
@@ -502,8 +575,9 @@ ONEGEEK.forms.AbstractFormField = function(field) {
    * 
    * @return true if there is a value, false if not
    */
-  this.validate = function() {    
+  this.validate = function() {
     if (this.field.value) {
+      
       this.setState(ONEGEEK.forms.FIELD_STATUS_OK);
       return true;
     }
@@ -511,7 +585,7 @@ ONEGEEK.forms.AbstractFormField = function(field) {
     if (this.modified === false) {
       this.setState(ONEGEEK.forms.FIELD_STATUS_INFO);
     } else {
-      this.setState(ONEGEEK.forms.FIELD_STATUS_ERROR);
+      this.setState(ONEGEEK.forms.FIELD_STATUS_EMPTY);
     }
 
     return false;
@@ -540,22 +614,22 @@ ONEGEEK.forms.AbstractFormField = function(field) {
   /**
    * Return context information about a particular field i.e. "A username should be between 5 and 10 characters
    */
-  this.getContextMessage = function() {
-    return this.contextMessage;
+  this.getContextMsg = function() {
+    return this.contextMsg;
   };
 
   /**
    * Get the error message associated with this field
    */
-  this.getErrorMessage = function() {
-    return this.errorMessage;
+  this.getErrorMsg = function() {
+    return this.errorMsg;
   };
 
   /**
    * Get the success message associated with this field
    */
-  this.getSuccessMessage = function() {
-    return this.successMessage;
+  this.getSuccessMsg = function() {
+    return this.successMsg;
   };
 
   /**
@@ -646,7 +720,7 @@ ONEGEEK.forms.AbstractComboBox = function(field) {
     if (this.modified === false || !this.isRequired) {
       this.setState(ONEGEEK.forms.FIELD_STATUS_INFO);
     } else {
-      this.setState(ONEGEEK.forms.FIELD_STATUS_ERROR);
+      this.setState(ONEGEEK.forms.FIELD_STATUS_EMPTY);
     }
 
     return false;
@@ -657,21 +731,23 @@ ONEGEEK.forms.AbstractComboBox = function(field) {
    */
   this.setup = function() {
     // Check for required class
-    if (util.doesElementBelongToClass(this.field, 'required')) {
+    if (_du.hasClass(this.field, 'required')) {
       this.isRequired = true;
     }
-    this.getMessageSpan();
-    if (ONEGEEK.forms.ENABLE_COMPACT_MESSAGES) {
+    this.getMsgSpan();
+    if (this.form.options.eMsgFormat == 'compact') {
       this.createFieldStatusIcon();
     }
     this.createRequiredSpan();
     this.validate();
 
     // Add events
-    util.addEvent(this.field, 'click', this.applyFieldValidation(this));
-    util.addEvent(this.field, 'blur', this.applyFieldValidation(this));
-    util.addEvent(this.field, 'click', this.applyContextInformation(this));
-    util.addEvent(this.field, 'change', this.applyFieldModification(this));
+    _du.addEvent(this.field, 'click', this.applyFieldValidation(this));
+    _du.addEvent(this.field, 'blur', this.applyFieldValidation(this));
+    _du.addEvent(this.field, 'click', this.applyContextInformation(this));
+    _du.addEvent(this.field, 'change', this.applyFieldModification(this));
+    
+    this.setLabel();
   };
 };
 
@@ -716,7 +792,7 @@ ONEGEEK.forms.AbstractCheckbox = function(field) {
         if (this.modified !== true || !this.isRequired) {
           this.setState(ONEGEEK.forms.FIELD_STATUS_INFO);
         } else {
-          this.setState(ONEGEEK.forms.FIELD_STATUS_ERROR);
+          this.setState(ONEGEEK.forms.FIELD_STATUS_EMPTY);
         }
       }
     }
@@ -728,11 +804,11 @@ ONEGEEK.forms.AbstractCheckbox = function(field) {
    */
   this.setup = function() {
     // Check for required class
-    if (util.doesElementBelongToClass(this.field, 'required')) {
+    if (_du.hasClass(this.field, 'required')) {
       this.isRequired = true;
     }
-    this.getMessageSpan();
-    if (ONEGEEK.forms.ENABLE_COMPACT_MESSAGES) {
+    this.getMsgSpan();
+    if (this.form.options.eMsgFormat == 'compact') {
       this.createFieldStatusIcon();
     }
     this.createRequiredSpan();
@@ -741,10 +817,12 @@ ONEGEEK.forms.AbstractCheckbox = function(field) {
     // Add events to ALL of the items
     var elements = document.forms[0].elements[this.field.name];
     for (i = 0; i < elements.length; i++) {
-      util.addEvent(elements[i], 'click', this.applyFieldValidation(this));
-      util.addEvent(elements[i], 'click', this.applyContextInformation(this));
-      util.addEvent(elements[i], 'change', this.applyFieldModification(this));
+      _du.addEvent(elements[i], 'click', this.applyFieldValidation(this));
+      _du.addEvent(elements[i], 'click', this.applyContextInformation(this));
+      _du.addEvent(elements[i], 'change', this.applyFieldModification(this));
     }
+    
+    this.setLabel();
   };
 };
 
@@ -778,11 +856,11 @@ ONEGEEK.forms.AbstractRadioButton = function(field) {
    */
   this.setup = function() {
     // Check for required class
-    if (util.doesElementBelongToClass(this.field, 'required')) {
+    if (_du.hasClass(this.field, 'required')) {
       this.isRequired = true;
     }
-    this.getMessageSpan();
-    if (ONEGEEK.forms.ENABLE_COMPACT_MESSAGES) {
+    this.getMsgSpan();
+    if (this.form.options.eMsgFormat == 'compact') {
       this.createFieldStatusIcon();
     }
     this.createRequiredSpan();
@@ -791,10 +869,12 @@ ONEGEEK.forms.AbstractRadioButton = function(field) {
     // Add events to ALL of the items
     var elements = document.forms[0].elements[this.field.name];
     for (i = 0; i < elements.length; i++) {
-      util.addEvent(elements[i], 'click', this.applyFieldValidation(this));
-      util.addEvent(elements[i], 'click', this.applyContextInformation(this));
-      util.addEvent(elements[i], 'change', this.applyFieldModification(this));
+      _du.addEvent(elements[i], 'click', this.applyFieldValidation(this));
+      _du.addEvent(elements[i], 'click', this.applyContextInformation(this));
+      _du.addEvent(elements[i], 'change', this.applyFieldModification(this));
     }
+    
+    this.setLabel();
   };
   /**
    * Override validation function:
@@ -811,7 +891,7 @@ ONEGEEK.forms.AbstractRadioButton = function(field) {
         if (this.modified !== true || !this.isRequired) {
           this.setState(ONEGEEK.forms.FIELD_STATUS_INFO);
         } else {
-          this.setState(ONEGEEK.forms.FIELD_STATUS_ERROR);
+          this.setState(ONEGEEK.forms.FIELD_STATUS_EMPTY);
         }
       }
     }
@@ -865,7 +945,7 @@ ONEGEEK.forms.AbstractTextField = function(field) {
     if (this.modified === false || this.isRequired === false) {
       this.setState(ONEGEEK.forms.FIELD_STATUS_INFO);
     } else {
-      this.setState(ONEGEEK.forms.FIELD_STATUS_ERROR);
+      this.setState(ONEGEEK.forms.FIELD_STATUS_EMPTY);
     }
 
     return false;
@@ -893,8 +973,8 @@ ONEGEEK.forms.NameField = function(field) {
   this.field = field;
   this.regex = /^([a-zA-Z\-\'\s]{2,30})$/g;
   this.cleanRegex = /[^a-zA-Z\-\'\s]/g;
-  this.errorMessage = 'Your name must be between 2 and 30 characters';
-  this.contextMessage = 'We would like to call you by your name';
+  this.errorMsg = 'Your name must be between 2 and 30 characters';
+  this.contextMsg = 'We would like to call you by your name';
 };
 
 // Subclass FormField
@@ -916,8 +996,8 @@ ONEGEEK.forms.PhoneField = function(field) {
   this.field = field;
   this.regex = /^([0-9]{8,10})$/g;
   this.cleanRegex = /[^0-9]/g;
-  this.errorMessage = 'Your phone number needs to be at least 8 digits long i.e. 03 1234 5678';
-  this.contextMessage = this.errorMessage;
+  this.errorMsg = 'Your phone number needs to be at least 8 digits long i.e. 03 1234 5678';
+  this.contextMsg = this.errorMsg;
 };
 
 // Subclass FormField
@@ -938,8 +1018,8 @@ formFieldFactory.registerFormField('phone','PhoneField');
 ONEGEEK.forms.EmailField = function(field) {
   this.field = field;
   this.regex = /^[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,4}$/i;
-  this.errorMessage = 'Please enter a valid email address i.e. user@domain.com';
-  this.contextMessage = 'Your email address will be kept confidential';
+  this.errorMsg = 'Please enter a valid email address i.e. user@domain.com';
+  this.contextMsg = 'Your email address will be kept confidential';
 
   /**
    * Override clean() method to do nothing
@@ -985,9 +1065,9 @@ ONEGEEK.forms.CaptchaTextField = function(field) {
   this.field = field;
   this.regex = /^([A-Za-z0-9\-_]+)$/g;
   this.cleanRegex = /[<>\/\\\(\);]/g;
-  this.successMessage = "Thankyou...";
-  this.errorMessage = "Please complete the security check";
-  this.contextMessage = "This prevents us from spam";
+  this.successMsg = "Thankyou...";
+  this.errorMsg = "Please complete the security check";
+  this.contextMsg = "This prevents us from spam";
 };
 
 // Subclass FormField
@@ -1005,7 +1085,7 @@ formFieldFactory.registerFormField('captcha','CaptchaTextField');
  */
 ONEGEEK.forms.RecaptchaTextField = function(field) {
   this.field = field;
-  this.contextMessage = "Need some <a href='javascript:Recaptcha.showhelp()'>help</a>? Get another <a href='javascript:Recaptcha.reload()'>CAPTCHA</a>";
+  this.contextMsg = "Need some <a href='javascript:Recaptcha.showhelp()'>help</a>? Get another <a href='javascript:Recaptcha.reload()'>CAPTCHA</a>";
 };
 
 // Subclass CaptchaTextField
@@ -1025,16 +1105,104 @@ formFieldFactory.registerFormField('recaptcha','RecaptchaTextField');
  * @param {Object}
  *          form The form XHTML DOM element OR the form's id
  */
-ONEGEEK.forms.Form = function(form) {
-  var fields = new Array(); // Array of fields
-  form = form || document.getElementById(form) || null; // DOM form object
+ONEGEEK.forms.Form = function(f) {
+  var fields = new Array();
+  var form = f || document.getElementById(f) || null; // DOM form object
   var completed = false;
   this.lang = null;
-
-  this.getForm = function() {
-    return form;
+  this.custom = false;
+ 
+  // Options that can be overridden by plugins/translations
+  var propOptions = ['autoFocus',
+                     'eMsgEventOn',
+                     'eMsgEventOff',
+                     'eMsgFormat',                     
+                       // If compact, these options are available
+                       'icons', 
+                         'error', 
+                         'info', 
+                         'ok',
+                     'eMsgFunction', 
+                     'fMsg',
+                     'fMsgFormat', 
+                     'fMsgContainer', 
+                     'fMsgFunction', 
+                     'reqShow',
+                     'reqChar',
+                     'reqPlacement',
+                     'supressAlert'
+                    ]; 
+  
+  // Constants: Override in a ONEGEEK.forms.GValidator.options key/value map to suit environment
+  this.options = {
+      icons: {
+        ok: '../images/icons/tick.png',
+        info: '../images/icons/help.png',
+        error: '../images/icons/icon_alert.gif'
+      },
+      reqShow: true,
+      reqChar: '*',
+      reqPlacement: 'after',
+      fMsgFormat: 'alert',
+      fMsg: 'Please correct the highlighted errors.',
+      eMsgFormat: 'open',
+      eMsgEventOn: 'click',
+      eMsgEventOff: null,
+      autoFocus: true
+  };
+ 
+  /**
+   * Read in the options given recursively, only
+   * letting in allowable properties, and merging with existing
+   * properties.
+   */
+  this.readOptions = function(options) {
+    this.options = this._readOptionsRecursive(this.options, options);
+  };
+  
+  /**
+   * Merges two options object property maps, into one object property map.
+   */
+  this._readOptionsRecursive = function(opts1, opts2) {
+    for (var p in opts2) {
+      if (propOptions.inArray(p)) {
+        try {
+          // Property in destination Object set; update its value.
+          if ( typeof(opts2[p]) == 'object' ) {
+            opts1[p] = this._readOptionsRecursive(opts1[p], opts2[p]);
+          } else {
+            opts1[p] = opts2[p];
+          }
+        } catch(e) {
+          // Property in destination Object not set; create it and set its value.
+          opts1[p] = opts2[p];
+        }
+      }
+    }
+    return opts1;
   };
 
+  
+  /**
+   * Read in any general/specific config options.
+   */
+  this.setOptions = function() {
+    try {
+      // Get any generic custom options   
+      this.readOptions(ONEGEEK.forms.GValidator.options);
+      
+      // Get any form specific options
+      if (this.custom === true) {        
+        this.readOptions(ONEGEEK.forms.GValidator.options[form.id]);
+      }
+    } catch (e) {
+      // do nothing, default options will exist
+    }    
+  };
+
+  /**
+   * Reset each form field validator.
+   */
   this.reset = function() {
     for ( var i = 0; i < fields.length; i++) {
       fields[i].reset();
@@ -1042,10 +1210,72 @@ ONEGEEK.forms.Form = function(form) {
   };
   
   /**
+   * Get the DOM form.
+   */
+  this.getForm = function() {
+    return form;
+  }
+  
+  /**
+   * Handle's the form level errors.
+   */
+  this.handleErrors = function(errors) {
+    
+    if(this.options.supressAlert !== true) {
+      alert(this.options.fMsg);
+    }
+    
+    /**
+     * Show FORM level errors.
+     */    
+    switch(this.options.fMsgFormat) {
+      case 'container':
+        
+        // Remove old erros
+        var el = document.getElementById('gvErrorsList');                
+        var c = document.getElementById(this.options.fMsgContainer); 
+        var l = document.createElement('ul');
+        l.id = 'gvErrorsList';
+        
+        for(var i=0; i < errors.length; i++) {
+          var li = document.createElement('li');
+          
+          if (errors[i].state === ONEGEEK.forms.FIELD_STATUS_ERROR) {
+            li.innerHTML = errors[i].errorMsg;  
+          } else {
+            li.innerHTML = errors[i].emptyMsg;
+          }
+          l.appendChild(li);
+        }
+        
+        if(el) {
+          c.replaceChild(l, el);
+        } else {
+          c.appendChild(l);  
+        }
+        _du.removeClass(c, 'hidden');
+        
+        // Scroll to the error container
+        window.location = '#' + this.options.fMsgContainer;
+        
+        break;
+      case 'function':
+        return this.options.fMsgFunction(errors);
+      default:        
+        break;
+    }
+    
+    // Otherwise, return false!
+    return false;
+  };
+  
+  /**
    * This function is used to validate the form
    */
   this.validate = function(e) {
     var firstErrorElement = null;
+    var errors = [];
+    var errorsE = [];
     
     // Call the validate events on each of the inputs
     // To update the status of each field
@@ -1060,17 +1290,17 @@ ONEGEEK.forms.Form = function(form) {
       // Check if field has validated AND
       // if it is a required field
       if (!valid && fields[i].isRequiredField()) {        
-        if (!firstErrorElement) {
-          firstErrorElement = fields[i].getDOMElement();
-        }
+          errors[errors.length] = fields[i];
+          errorsE[errorsE.length] = fields[i].getDOMElement();
       }
     }
 
     // If an element was found, move the focus to it
     // and display the error
-    if (firstErrorElement) {
-      firstErrorElement.focus();
-      alert('Please correct the highlighted errors.');
+    if (errors[0]) {
+      errorsE[0].focus();
+      
+      this.handleErrors(errors);      
       return false;
     }
 
@@ -1085,14 +1315,17 @@ ONEGEEK.forms.Form = function(form) {
     }
     return true;
   };
-
-  /**
-   * Get the form id associated with this FormValidator
-   */
-  this.getFormId = function() {
-    return id;
+  
+  this.applyFocus = function() {
+    // @todo: fix this
+    if(this.options.autoFocus === true) {
+      var inputs = document.getElementsByTagName('input');
+      if(inputs.length > 0) {
+        inputs[0].focus();
+      }
+    }
   };
-
+  
   /**
    * Get a field by it's name
    * 
@@ -1117,7 +1350,15 @@ ONEGEEK.forms.Form = function(form) {
         
     if (form) {
       // Set language if not EN
-      this.lang = (form.lang !== null && form.lang != 'EN') ? form.lang : null;
+      this.lang = (form.lang != '') ? form.lang : null;      
+      
+      // Custom configuration needed?
+      if (_du.hasClass(form, 'custom')) {
+        this.custom = true;  
+      }
+      
+      // Read in config options for validation behaviour
+      this.setOptions();
       
       // Add validation events to INPUT fields
       var inputs = form.getElementsByTagName("input");
@@ -1138,8 +1379,10 @@ ONEGEEK.forms.Form = function(form) {
       }
 
       // Add validate() call to form
-      util.addEvent(form, 'submit', this.validate);
-      util.addEvent(form, 'reset', this.reset);
+      form.onsubmit = this.validate.gbind(this);
+      form.onreset = this.reset.gbind(this);
+//      _du.addEvent(form, 'submit', this.validate.bind(this));
+//      _du.addEvent(form, 'reset', this.reset);
     }
   };
 
@@ -1150,9 +1393,10 @@ ONEGEEK.forms.Form = function(form) {
    *          input The form input/field
    */
   this.doFormField = function(field) {
-    // Check type
-    if (field && field.type == 'text' || field.type == 'password' || field.type == 'textarea' || field.type == 'select-one' || field.type == 'select-multiple' || field.type == 'checkbox' || field.type == 'file' || field.type == 'radio') {
 
+    // Check type
+    if (field && field.type == 'text' || field.type == 'password' || field.type == 'textarea' || field.type == 'select-one' || field.type == 'select-multiple' || field.type == 'checkbox' || field.type == 'file' || field.type == 'radio') {      
+      
       // Only apply validation if field is not already being monitored
       if (!getFieldByName(field.name)) {
         // Check class names
@@ -1188,8 +1432,9 @@ ONEGEEK.forms.Form = function(form) {
           
           // Add validation and context functions to field
           var element = fieldObject.getDOMElement();
-          fieldObject.setup();
           fieldObject.setForm(this);
+          fieldObject.setup();
+          
 
           // Add the element to the array
           fields[fields.length] = fieldObject;
@@ -1211,21 +1456,55 @@ ONEGEEK.forms.Form = function(form) {
  *          form The form XHTML DOM element
  */
 ONEGEEK.forms.GValidator = function() {
-  
-  /**
-   * Read in any config options.
-   */
-  this.readOptions = function() {
-    
-  };
+  var gForms = [];
   
   /**
    * Read in any user-defined plug-ins.
    * Must come from a user created ONEGEEK.forms.GValidator.plugin variable.
    */  
   this.readPlugins = function() {
+    
+    // Attempt to load convention based configuration files...    
+    try {
+      var scripts = document.getElementsByTagName('script');
+      var loaded = false;
+      for(var i = 0; i < scripts.length; i++) {
+        if(scripts[i].src.indexOf('gvalidator.js') > 0) {
+          loaded = true;
+          var s = scripts[i].src;
+//          console.log(s)
+          var path = s.substring(0, s.lastIndexOf('/')+1) ;         
+//          console.log('loading: ' + path + 'gvalidator-config.js');
+          _du.load(path + 'gvalidator-config.js');
+             
+          // Load lang files
+          var fs = document.getElementsByTagName('form');
+          for(var i = 0; i < fs.length; i++) {
+            if(fs[i].lang != '') {
+//              console.log("loading " + path + 'gvalidator_' + fs[i].lang + '.js');
+              _du.load(path + 'gvalidator_' + fs[i].lang + '.js');    
+            }
+          }
+          
+        }
+      }
+    } catch(e) {
+      // Nothing found
+//      console.log(e)
+    }
+        
+    // Add each detected plugin to the form field registry 
     for(item in ONEGEEK.forms.GValidator.plugins) {
       formFieldFactory.registerFormField(item,ONEGEEK.forms.GValidator.plugins[item]._extends, ONEGEEK.forms.GValidator.plugins[item]);
+    }
+  };
+  
+  /**
+   * Apply focus to the first input element
+   */
+  this.applyFocus = function() {
+    if(gForms.length > 0) {
+      gForms[0].applyFocus();
     }
   };
   
@@ -1234,19 +1513,19 @@ ONEGEEK.forms.GValidator = function() {
    */
   this.autoApplyFormValidation = function() {
     var forms = document.getElementsByTagName('form');
-    for (i = 0; i < forms.length; i++) {
-      if (forms[i].className == 'autoform' || forms[i].className == 'gform') {
+    
+    for (var i = 0; i < forms.length; i++) {
+      if (_du.hasClass(forms[i], 'autoform') || _du.hasClass(forms[i], 'gform')) {
         // Create the form object
-        var form = new ONEGEEK.forms.Form(forms[i]);
+        gForms[i] = new ONEGEEK.forms.Form(forms[i]);
 
         // Apply validation
-        form.doForm();
+        gForms[i].doForm();
       }
     }
+    
+    this.applyFocus();
   };
-  
-  // Read in config options?
-  this.readOptions();
   
   // Initialize Plugins
   this.readPlugins();
@@ -1257,7 +1536,7 @@ if(typeof(ONEGEEK.forms.GValidator.translation) == 'undefined') {
   ONEGEEK.forms.GValidator.translation = {};
 }
 
-// Add load event function
+// Add load event fu;nction
 function addLoadEventGVal(func) {
   var oldonload = window.onload;
   if (typeof window.onload != 'function') {
@@ -1272,11 +1551,14 @@ function addLoadEventGVal(func) {
   }
 }
 
-// If auto form validation is enabled,
-// automatically validate forms on load.
+// Automatically validation to forms on load.
 addLoadEventGVal( function() {
-  if(ONEGEEK.forms.ENABLE_AUTO_FORM_VALIDATION) {
-    gvalidator = new ONEGEEK.forms.GValidator();
-    gvalidator.autoApplyFormValidation();
-  }
+  gvalidator = new ONEGEEK.forms.GValidator();
+  gvalidator.autoApplyFormValidation();
 });
+
+function createBoundedWrapper(object, method) {
+  return function() {
+    return method.apply(object, arguments);
+  };
+}
