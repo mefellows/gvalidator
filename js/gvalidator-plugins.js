@@ -1,14 +1,12 @@
 ONEGEEK.forms.GValidator.options = {
     // Constants: Edit to suit your environment
-    autoformValidation: true,
     compactMessages: true,
 
     // Image constants
     icons: {
-      error:  '../images/icons/cross.png',
       ok:     '../images/icons/tick.png',
       info:   '../images/icons/help.png',
-      alert:  '../images/icons/icon_alert.gif'
+      error:  '../images/icons/icon_alert.gif'
     }
 };
 
