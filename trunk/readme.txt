@@ -1,4 +1,4 @@
-GValidator (v0.4.25) - Javascript Validation library from OneGeek (http://www.onegeek.com.au)
+GValidator (v0.5.49) - Javascript Validation library from OneGeek (http://www.onegeek.com.au)
 
 ----------------------------------------------------------------
 
@@ -48,6 +48,21 @@ To get the latest code, view or post bugs or learn more go to:
 
 GValidator Change Log
 ----------------------------------------------------------------
+0.5.49
+--
+
+Major updates include:
+ - Internationalisation and translation file support added.
+ - Easy configuration, and form specific configuration via class names and id's
+ - Simple plugin file support
+ - Empty fields now have separate error messages
+ - Form level validation can be passed to a function handler via configuration
+ - Form level validation errors can be displayed in a container div via a configuration option
+ - Element
+ - DEPRECATION of the following params
+   - ENABLE_COMPACT_MESSAGES (replace with config option eMsgFormat: 'compact')
+   - ICON_* (replaced by config options icons: {error: 'image/path', info...} ) 
+
 0.4.30
 --
 Bug fix (Issue 4). Generic text field did not take 'required' flag into consideration, and is now more closely related to AbstractTextField, in that it has a universal 'this.regex' predicate.
