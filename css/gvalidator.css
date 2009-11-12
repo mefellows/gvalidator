@@ -1,23 +1,29 @@
-/* Auto Form */
-span.required{color:red;width:5px}
+/* General */
+body{margin:20px 40px}
 
-form.autoform{max-width:800px; padding:20px 5px; border:solid 1px #ccc;}
+/* Auto Form */
+.hidden{display:none}
+span.required{color:red;width:15px; position: relative; top:7px; padding-right:5px}
+
+form.autoform{padding:20px 5px; border:solid 1px #ccc;}
 #contentwrap form.autoform img{float:none}
 form.autoform .fieldstatus a{border:none}
 form.autoform .fieldstatus a:hover{background:none}
-form.autoform div{margin:2px 0; clear:both;}
+form.autoform div{margin:5px 0; clear:both;}
 
 /* Labels / Messages */
-form.autoform label{padding:6px}
-form.autoform .msg.icon{padding:5px 5px 5px 25px; margin:0 10px}
-form.autoform span.error.icon{background:#FFF6CF url(/images/icons/icon_alert.gif) 7px center  no-repeat; display:inline}
-form.autoform span.ok.icon{background:#D7FFCF url(/images/icons/tick.png) 7px center  no-repeat; display:inline}
-form.autoform span.info.icon{background:#DFF0FF url(/images/icons/help.png) 7px center no-repeat; display:inline}
-form.autoform label{width:200px; display:block; float:left;}
+form.autoform label{padding:6px; cursor:pointer; text-align:right;}
+form.autoform .msg.icon{padding:5px 5px 5px 30px; margin:0 10px; position:absolute}
+form.autoform span.error.icon{background:#FFF6CF url(../images/icons/icon_alert.gif) 7px center no-repeat; display:inline}
+form.autoform span.ok.icon{background:#D7FFCF url(../images/icons/tick.png) 7px center  no-repeat; display:inline}
+form.autoform span.info.icon{background:#DFF0FF url(../images/icons/help.png) 7px center no-repeat; display:inline}
+form.autoform label{width:220px; display:block; float:left;}
 form.autoform span.required{float:left}
 
 /* Inputs */
-form.autoform input[type="text"]{padding:5px;}
+form.autoform input[type="text"]{padding:5px; background-color:#F5FFB0; border:solid 1px #999}
+form.autoform input[type="text"]:focus{background-color:#efefef;}
+
 form.autoform select{width:190px}
 form.autoform input.checkbox{float:none; display:inline}
 form.autoform label.checkbox,form.autoform label.radio{width:auto; float:none; display:inline;}
@@ -31,6 +37,18 @@ form.autoform .fieldstatus{margin:0; cursor:pointer;}
 img,a{padding:0;margin:0;}
 
 /* Compact Style Message */
-form.autoform span.error, div.alert{background:#FFF6CF; border:1px solid #FFDA2F; display:none}
-form.autoform span.ok{background:#D7FFCF; border:1px solid #8ED181; display:none}
-form.autoform span.info{background:#DFF0FF ; border:1px solid #6FBBFF; display:none}
+form.autoform span.error, div.alert{background:#FFF6CF; border:1px solid #FFDA2F;}
+form.autoform span.ok{background:#D7FFCF; border:1px solid #8ED181;}
+form.autoform span.info{background:#DFF0FF ; border:1px solid #6FBBFF;}
+
+/* Errors Div */
+div#errors{background:#FFF6CF url(../images/icons/icon_alert.gif) 10px 20px no-repeat; border:1px solid #FFDA2F; padding:0 20px 20px 40px; margin-bottom:20px}
+div#errors h3{}
+div#errors ul{line-height:1.5;list-style-image:none;list-style-position:outside;list-style-type:none; padding:0px;}
+div#errors ul li{list-style:none}
+
+/* Custom Form Errors */
+/* Compact Style Message */
+form.autoform#example-custom-form span.error, form.autoform#example-custom-form div.alert{background-color:#fff; border:none; }
+form.autoform#example-custom-form span.ok{background-color:#fff; border:none; }
+form.autoform#example-custom-form span.info{background-color:#fff ; border:none; }
