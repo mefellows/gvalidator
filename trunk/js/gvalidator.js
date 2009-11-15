@@ -139,7 +139,6 @@ Element.prototype.addClass = function(className) {
  * @return void
  */
 Element.prototype.addEvent = function(event, handler) {
-  console.log('adding event: ' + event + ', to this: ' + this)
   if (this.attachEvent) { // IE (6+?)
     this.attachEvent('on' + event, handler);
   } else if (this.addEventListener) { // Most nice browsers
