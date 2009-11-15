@@ -40,6 +40,147 @@ if (typeof ONEGEEK.forms == "undefined") {
 }
 
 /**
+ * Additions to the Element prototype.
+ * @namespace Element
+ */
+
+/**
+ * Binds an object and any number of args to a function.
+ * 
+ * gbind is used instead of the common 'bind' to avoid conflicts.
+ * 
+ * @function {public Function} gbind
+ * @param {Object} object The object to bind to this function
+ * @param {Array}  args   The args to pass to the function 
+ * @return The function with the new 'this'.
+ */
+Function.prototype.gbind = function(object, args) {
+  var func = this;
+  return function() {
+    return func.apply(object, args);
+  };
+};
+
+
+/**
+ * Get the x and y coordinates of an element relative to the top left corner of the window
+ * 
+ * @function {public Array} findPos 
+ * @param {Object} obj  The source element
+ * @return An array containing the x,y coords of obj
+ */
+Element.prototype.findPos = function() {
+  var curleft = 0;
+  var curtop = 0;
+  var obj = this;
+  if (obj.offsetParent) {
+    do {
+      curleft += obj.offsetLeft;
+      curtop += obj.offsetTop;
+    } while ((obj = obj.offsetParent));
+  }
+  return [curleft, curtop];
+};
+
+
+/**
+ * Check if an element belongs to a certain class
+ * 
+ * @function {public Boolean} hasClass
+ * @param {Object} class    The class to check against the element
+ * @return The result of the operation
+ */
+Element.prototype.hasClass = function(className) {
+  var classes = this.className;
+  var pattern = new RegExp(className, 'g');
+
+  if (pattern.test(classes)) {
+    return true;
+  }
+  return false;
+};
+
+/**
+ * Remove a class name from an element
+ * 
+ * @function {public void} removeClass
+ * @param {Object} className  The class to remove from the element
+ * @return void
+ */
+Element.prototype.removeClass = function(className) {
+  var classes = this.className;
+  var regex = '\b' + className + '\b';
+  this.className = classes.replace(className, '');
+};
+
+/**
+ * Add a class name to an element
+ * 
+ * @function {public void} addClass
+ * @param {Object} class    The class to add to the element
+ * @return void
+ */
+Element.prototype.addClass = function(className) {
+  var classes = this.className;
+
+  if (!this.hasClass(className)) {
+    this.className += " " + className;
+  }
+};
+
+/**
+ * Attach an event to an element. 
+ * Handles for most browsers NB. 
+ * To make it work in crappy old browsers assign the element an id
+ * 
+ * @function {public void} addEvent
+ * @param {String}      event   The type of event i.e. 'click','mouseover'
+ * @param {Function}    handler The function handler for the event
+ * @return void
+ */
+Element.prototype.addEvent = function(event, handler) {
+  console.log('adding event: ' + event + ', to this: ' + this)
+  if (this.attachEvent) { // IE (6+?)
+    this.attachEvent('on' + event, handler);
+  } else if (this.addEventListener) { // Most nice browsers
+    this.addEventListener(event, handler, false);
+  } else { // Old browsers
+    // Assign an id based on the time for this element if it has no id
+    if (!this.id) {
+      var date = new Date();
+      this.id = date.getTime();
+    }
+    eval('document.getElementById(' + this.id + ').on' + event + '=' + handler);
+  }
+};
+
+/**
+ * Popup / Hide an element at the location of the click
+ * 
+ * @function {public void} togglePopup
+ * @param {Object} source The source element that is sending the request
+ * @param {Object} target The target element to show/hide
+ * @return void
+ */
+Element.prototype.togglePopup = function(target) {
+  var div = target;
+  var coords = this.findPos;
+  if (!div.hasClass('hidden')) {
+    div.addClass('hidden');
+  } else {
+    div.style.position = 'absolute';
+    div.style.left = coords[0] + 10 + 'px';
+    div.style.top = coords[1] - 6 + 'px';
+    div.removeClass('hidden');
+  }
+};
+
+/**
+ * END additions to the Element prototype
+ * @end
+ */
+
+/**
  * Additions to the Function prototype.
  * @namespace Function
  */
@@ -93,136 +234,6 @@ Array.prototype.gcontains = function(needle) {
  * END additions to the Array prototype
  * @end
  */
-
-/**
- * General DOM manipulation utilities needed for this library
- * 
- * @class ONEGEEK.forms.DOMUtilities
- */
-ONEGEEK.forms.DOMUtilities = function() {
-    
-  /**
-   * Get the x and y coordinates of an element relative to the top left corner of the window
-   * 
-   * @function {public Array} findPos 
-   * @param {Object} obj  The source element
-   * @return An array containing the x,y coords of obj
-   */
-  this.findPos = function(obj) {
-    var curleft = 0;
-    var curtop = 0;
-    if (obj.offsetParent) {
-      do {
-        curleft += obj.offsetLeft;
-        curtop += obj.offsetTop;
-      } while ((obj = obj.offsetParent));
-    }
-    return [curleft, curtop];
-  };
-
-  /**
-   * Popup / Hide an element at the location of the click
-   * 
-   * @function {public void} togglePopup
-   * @param {Object} source The source element that is sending the request
-   * @param {Object} target The target element to show/hide
-   * @return void
-   */
-  this.togglePopup = function(source, target) {
-    var div = target;
-    var coords = this.findPos(source);
-    if (!this.hasClass(div, 'hidden')) {
-      this.addClass(div, 'hidden');
-    } else {
-      div.style.position = 'absolute';
-      div.style.left = coords[0] + 10 + 'px';
-      div.style.top = coords[1] - 6 + 'px';
-      this.removeClass(div, 'hidden');
-    }
-  };
-
-  /**
-   * Check if an element belongs to a certain class
-   * 
-   * @function {public Boolean} hasClass
-   * @param {Object} element  The element to check
-   * @param {Object} class    The class to check against the element
-   * @return The result of the operation
-   */
-  this.hasClass = function(element, className) {
-    var classes = element.className;
-    var pattern = new RegExp(className, 'g');
-
-    if (pattern.test(classes)) {
-      return true;
-    }
-    return false;
-
-  };
-
-  /**
-   * Remove a class name from an element
-   * 
-   * @function {public void} removeClass
-   * @param {Object} element    The element to check
-   * @param {Object} className  The class to remove from the element
-   * @return void
-   */
-  this.removeClass = function(element, className) {
-    var classes = element.className;
-    var regex = '\b' + className + '\b';
-    element.className = classes.replace(className, '');
-  };
-
-  /**
-   * Add a class name to an element
-   * 
-   * @function {public void} addClass
-   * @param {Object} element  The element to check
-   * @param {Object} class    The class to add to the element
-   * @return void
-   */
-  this.addClass = function(element, className) {
-    var classes = element.className;
-
-    if (!this.hasClass(element, className)) {
-      element.className += " " + className;
-    }
-  };
-
-  /**
-   * Attach an event to an element. 
-   * Handles for most browsers NB. 
-   * To make it work in crappy old browsers assign the element an id
-   * 
-   * @function {public void} addEvent
-   * @param {DOMElement}  element The element to add the event to
-   * @param {String}      event   The type of event i.e. 'click','mouseover'
-   * @param {Function}    handler The function handler for the event
-   * @return void
-   */
-  this.addEvent = function(element, event, handler) {
-    if (element.attachEvent) { // IE (6+?)
-      element.attachEvent('on' + event, handler);
-    } else if (element.addEventListener) { // Most nice browsers
-      element.addEventListener(event, handler, false);
-    } else { // Old browsers
-      // Assign an id based on the time for this element if it has no id
-      if (!element.id) {
-        var date = new Date();
-        element.id = date.getTime();
-      }
-      eval('document.getElementById(' + element.id + ').on' + event + '=' + handler);
-    }
-  };
-};
-
-// Create a global (quasi-singleton) instance of the factory
-var _du = new ONEGEEK.forms.DOMUtilities();
-
-// ///////////////////////////////////////////
-// Start FormField Class Definition //
-// ///////////////////////////////////////////
 
 /**
  * Abstract Form Field object. 
@@ -399,7 +410,7 @@ ONEGEEK.forms.AbstractFormField = function(field) {
    */
   this.setup = function() {
     // Check for required class
-    if (_du.hasClass(this.field, 'required')) {
+    if (this.field.hasClass('required')) {
       this.isRequired = true;
     }
     this.getMsgSpan();
@@ -410,9 +421,9 @@ ONEGEEK.forms.AbstractFormField = function(field) {
     this.validate();
 
     // Add events
-    _du.addEvent(this.field, 'blur', this.applyFieldValidation(this));
-    _du.addEvent(this.field, 'click', this.applyContextInformation(this));
-    _du.addEvent(this.field, 'change', this.applyFieldModification(this));
+    this.field.addEvent('blur', this.applyFieldValidation(this));
+    this.field.addEvent('click', this.applyContextInformation(this));
+    this.field.addEvent('change', this.applyFieldModification(this));
     
     this.setLabel();
     
@@ -559,9 +570,9 @@ ONEGEEK.forms.AbstractFormField = function(field) {
     this.state = state;
     
     // Remove previous messages
-    _du.removeClass(this.msgSpan, 'error');
-    _du.removeClass(this.msgSpan, 'info');
-    _du.removeClass(this.msgSpan, 'ok');
+    this.msgSpan.removeClass('error');
+    this.msgSpan.removeClass('info');
+    this.msgSpan.removeClass('ok');
 
     var src = '';
     var title = '';
@@ -576,33 +587,33 @@ ONEGEEK.forms.AbstractFormField = function(field) {
         // Replace vars in message
         this.emptyMsg = this.emptyMsg.replace('%field%', "'" + this.label + "'");
         message = this.emptyMsg;
-        _du.addClass(this.msgSpan, 'error');
+        this.msgSpan.addClass('error');
         break;
       case ONEGEEK.forms.FIELD_STATUS_ERROR:
         src = this.form.options.icons.error;
         alt = 'There are errors with this field. Click for more info.';
         title = 'There are errors with this field. Click for more info.';
         message = this.errorMsg;
-        _du.addClass(this.msgSpan, 'error');
+        this.msgSpan.addClass('error');
         break;
       case ONEGEEK.forms.FIELD_STATUS_OK:
         src = this.form.options.icons.ok;
         alt = 'This field has been completed successfully.';
         title = 'This field has been completed successfully.';
         message = this.successMsg;
-        _du.addClass(this.msgSpan, 'ok');
+        this.msgSpan.addClass('ok');
         break;
       case ONEGEEK.forms.FIELD_STATUS_RESET:
         // Hide the message if in COMPACT mode
         if (this.form.options.eMsgFormat == 'compact') {
-          _du.addClass(this.msgSpan, 'hidden');
+          this.msgSpan.addClass('hidden');
         }
       default :
         src = this.form.options.icons.info;
         alt = 'Click for more information about this field.';
         title = 'Click for more information about this field.';
         message = this.contextMsg;
-        _du.addClass(this.msgSpan, 'info');
+        this.msgSpan.addClass('info');
     }
     if (this.form.options.eMsgFormat == 'compact') {
       this.statusImg.src = src;
@@ -614,7 +625,7 @@ ONEGEEK.forms.AbstractFormField = function(field) {
     if (message !== null) {
       this.msgSpan.innerHTML = message;
     } else {
-      _du.addClass(this.msgSpan, 'hidden');
+      this.msgSpan.addClass('hidden');
     }
   };
 
@@ -656,7 +667,7 @@ ONEGEEK.forms.AbstractFormField = function(field) {
       // Get the icon object
       var msgSpans = this.field.parentNode.getElementsByTagName('span');
       for ( var i = 0; i < msgSpans.length; i++) {
-        if (_du.hasClass(msgSpans[i], 'fieldstatus')) {
+        if (msgSpans[i].hasClass('fieldstatus')) {
           this.fieldStatus = msgSpans[i];
           return this.fieldStatus;
         }
@@ -673,9 +684,9 @@ ONEGEEK.forms.AbstractFormField = function(field) {
       // Link
       this.statusLink = document.createElement('a');
       // this.statusLink.href = "";
-      _du.addEvent(this.statusLink, this.form.options.eMsgEventOn, addPopupToggle(this.statusLink, this.msgSpan));
+      this.statusLink.addEvent(this.form.options.eMsgEventOn, addPopupToggle(this.statusLink, this.msgSpan));
       if(this.form.options.eMsgEventOff !== null) {
-        _du.addEvent(this.statusLink, this.form.options.eMsgEventOff, addPopupToggle(this.statusLink, this.msgSpan));
+        this.statusLink.addEvent(this.form.options.eMsgEventOff, addPopupToggle(this.statusLink, this.msgSpan));
       }
 
       // Place the image inside the link, then the link in the span
@@ -701,7 +712,7 @@ ONEGEEK.forms.AbstractFormField = function(field) {
    */
   var addPopupToggle = function(statusLink, msgSpan) {
     return function() {
-      _du.togglePopup(statusLink, msgSpan); // Show hide context information on click
+      statusLink.togglePopup(msgSpan); // Show hide context information on click
     };
   };
 
@@ -716,7 +727,7 @@ ONEGEEK.forms.AbstractFormField = function(field) {
       // Get the MsgSpan object - This is where the form field gets a message
       var msgSpans = this.field.parentNode.getElementsByTagName('span');
       for ( var i = 0; i < msgSpans.length; i++) {
-        if (_du.hasClass(msgSpans[i], 'msg')) {
+        if (msgSpans[i].hasClass('msg')) {
           this.msgSpan = msgSpans[i];
           return this.msgSpan;
         }
@@ -888,7 +899,7 @@ ONEGEEK.forms.ComboBox = function(field) {
    */
   this.setup = function() {
     // Check for required class
-    if (_du.hasClass(this.field, 'required')) {
+    if (this.field.hasClass('required')) {
       this.isRequired = true;
     }
     this.getMsgSpan();
@@ -899,10 +910,10 @@ ONEGEEK.forms.ComboBox = function(field) {
     this.validate();
 
     // Add events
-    _du.addEvent(this.field, 'click', this.applyFieldValidation(this));
-    _du.addEvent(this.field, 'blur', this.applyFieldValidation(this));
-    _du.addEvent(this.field, 'click', this.applyContextInformation(this));
-    _du.addEvent(this.field, 'change', this.applyFieldModification(this));
+    this.field.addEvent('click', this.applyFieldValidation(this));
+    this.field.addEvent('blur', this.applyFieldValidation(this));
+    this.field.addEvent('click', this.applyContextInformation(this));
+    this.field.addEvent('change', this.applyFieldModification(this));
     
     this.setLabel();
   };
@@ -960,7 +971,7 @@ ONEGEEK.forms.Checkbox = function(field) {
    */
   this.setup = function() {
     // Check for required class
-    if (_du.hasClass(this.field, 'required')) {
+    if (this.field.hasClass('required')) {
       this.isRequired = true;
     }
     this.getMsgSpan();
@@ -973,9 +984,9 @@ ONEGEEK.forms.Checkbox = function(field) {
     // Add events to ALL of the items
     var elements = document.forms[0].elements[this.field.name];
     for (i = 0; i < elements.length; i++) {
-      _du.addEvent(elements[i], 'click', this.applyFieldValidation(this));
-      _du.addEvent(elements[i], 'click', this.applyContextInformation(this));
-      _du.addEvent(elements[i], 'change', this.applyFieldModification(this));
+      elements[i].addEvent('click', this.applyFieldValidation(this));
+      elements[i].addEvent('click', this.applyContextInformation(this));
+      elements[i].addEvent('change', this.applyFieldModification(this));
     }
     
     this.setLabel();
@@ -1011,7 +1022,7 @@ ONEGEEK.forms.RadioButton = function(field) {
    */
   this.setup = function() {
     // Check for required class
-    if (_du.hasClass(this.field, 'required')) {
+    if (this.field.hasClass('required')) {
       this.isRequired = true;
     }
     this.getMsgSpan();
@@ -1024,9 +1035,9 @@ ONEGEEK.forms.RadioButton = function(field) {
     // Add events to ALL of the items
     var elements = document.forms[0].elements[this.field.name];
     for (i = 0; i < elements.length; i++) {
-      _du.addEvent(elements[i], 'click', this.applyFieldValidation(this));
-      _du.addEvent(elements[i], 'click', this.applyContextInformation(this));
-      _du.addEvent(elements[i], 'change', this.applyFieldModification(this));
+      elements[i].addEvent('click', this.applyFieldValidation(this));
+      elements[i].addEvent('click', this.applyContextInformation(this));
+      elements[i].addEvent('change', this.applyFieldModification(this));
     }
     
     this.setLabel();
@@ -1466,7 +1477,7 @@ ONEGEEK.forms.Form = function(f) {
         } else {
           c.appendChild(l);  
         }
-        _du.removeClass(c, 'hidden');
+        c.removeClass('hidden');
         
         // Scroll to the error container
         window.location = '#' + this.options.fMsgContainer;
@@ -1581,7 +1592,7 @@ ONEGEEK.forms.Form = function(f) {
       this.lang = (form.lang) ? form.lang : null;      
       
       // Custom configuration needed?
-      if (_du.hasClass(form, 'custom')) {
+      if (form.hasClass('custom')) {
         this.custom = true;  
       }
       
@@ -1608,7 +1619,7 @@ ONEGEEK.forms.Form = function(f) {
 
       // Add validate() call to form
       form.onsubmit = this.validate.gbind(this);
-      _du.addEvent(form, 'reset', this.reset.gbind(this));
+      form.addEvent('reset', this.reset.gbind(this));
     }
   };
 
@@ -1677,6 +1688,7 @@ ONEGEEK.forms.Form = function(f) {
  * @class ONEGEEK.forms.GValidator
  */
 ONEGEEK.forms.GValidator = function() {
+
   /**
    * The set of forms to apply validation to
    * 
@@ -1719,10 +1731,12 @@ ONEGEEK.forms.GValidator = function() {
    * @return void
    */
   this.autoApplyFormValidation = function() {
+    
+    
     var forms = document.getElementsByTagName('form');
     
     for (var i = 0; i < forms.length; i++) {
-      if (_du.hasClass(forms[i], 'autoform') || _du.hasClass(forms[i], 'gform')) {
+      if (forms[i].hasClass('autoform') || forms[i].hasClass('gform')) {
         // Create the form object
         gForms[i] = new ONEGEEK.forms.Form(forms[i]);
 
@@ -1735,7 +1749,7 @@ ONEGEEK.forms.GValidator = function() {
   };
   
   // Initialize Plugins
-  this.readPlugins();
+  this.readPlugins();  
 };
 
 // Open translation NS
