@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<project name="GValidator" default="jssniff" basedir=".">
+
+    <description>GValidator build file</description>
+    <property file="properties/build-${user.name}.properties" />
+
+    <!-- JS Code Convention Check (JSLint) -->
+    <target name="jssniff">
+        <echo message="Checking JavaScript tidyness..." />
+        <apply executable="java" parallel="false" failonerror="true">
+            <arg value="-jar" />
+            <arg value="${builder}/build/builders/js.jar" />
+            <arg value="${builder}/build/builders/jslint.js" />
+            <filelist files="../js/gvalidator.js" />
+            <srcfile />
+        </apply>
+        <echo message="done!" />
+    </target>
+
+    <!-- JS Documentation -->
+    <target name="jsdoc">
+        <echo message="Documenting JS..." />
+        <exec executable="java">
+            <arg value="-jar" />
+            <arg value="${jsdoc-toolkit.path}/jsrun.jar" />
+            <arg value="${jsdoc-toolkit.path}/app/run.js" />
+
+            <arg value="-a" />
+            <arg value="-p" />
+
+            <arg value="-d=documentation/js/output" />
+
+            <arg value="${path}/js/gvalidator.js" />
+
+            <arg value="-t=${jsdoc-toolkit.path}/templates/jsdoc" />
+        </exec>
+        <echo message="done!" />
+    </target>
+
+
+    <!-- Compress and Version MIT JS -->
+    <target name="compress">
+        <!-- Delete old files -->
+        <delete  verbose="true">
+            <fileset dir="../js/compressed">
+                <include name="*.js" />
+            </fileset>
+        </delete>
+
+        <!-- Compress... -->
+        <apply executable="java" parallel="false" failonerror="true">
+            <fileset dir="../js">
+                <include name="**/*.js" />
+                <exclude name="*compressed*" />
+            </fileset>
+            <arg line="-jar" />
+            <arg path="${builder}/build/builders/yuicompressor-2.4.2.jar" />
+            <arg line="--preserve-semi" />
+            <arg line="-o" />
+            <mapper type="glob" from="*.js" to="../js/compressed/*.js" />
+            <targetfile />
+            <srcfile />
+        </apply>
+    </target>
+
+</project>
