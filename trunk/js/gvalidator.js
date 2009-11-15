@@ -177,16 +177,6 @@ ONEGEEK.forms.DOMUtilities = function() {
       eval('document.getElementById(' + element.id + ').on' + event + '=' + handler);
     }
   };
-
-  /**
-   * Dynamically load a JS file.
-   */
-  this.load = function(script) {    
-       var e = document.createElement("script");
-       e.src = script;
-       e.type="text/javascript";
-       document.getElementsByTagName("head")[0].appendChild(e);    
-  }
 };
 
 // Create a global (quasi-singleton) instance of the factory
@@ -242,7 +232,7 @@ ONEGEEK.forms.AbstractFormField = function(field) {
    */
   this.setClassName = function(classname) {
     this.className = classname;
-  }
+  };
   
   /**
    * Set the language translations for this.
@@ -301,14 +291,10 @@ ONEGEEK.forms.AbstractFormField = function(field) {
       var tagName = '';
       do {  
         tagName = parent.tagName.toLowerCase();
-        console.log(tagName)
         if(tagName == 'fieldset') {
           var legend = parent.getElementsByTagName('legend');
-          console.log(legend)
           if (legend.length > 0) {
-//            console.log(legend[0].innerHTML)
             this.label = legend[0].innerHTML;
-            console.log('fond!!!' + this.label)
             return true;
           }
         }
@@ -319,9 +305,9 @@ ONEGEEK.forms.AbstractFormField = function(field) {
       this.label = 'Field';
       return false;
     }
-    this.label = 'Field'
+    this.label = 'Field';
     return false;
-  }
+  };
   
   /**
    * Set the parent form. This is done on initialize
@@ -444,7 +430,7 @@ ONEGEEK.forms.AbstractFormField = function(field) {
         // Hide the message if in COMPACT mode
         if (this.form.options.eMsgFormat == 'compact') {
           _du.addClass(this.msgSpan, 'hidden');
-        }        
+        }
       default :
         src = this.form.options.icons.info;
         alt = 'Click for more information about this field.';
@@ -1214,7 +1200,7 @@ ONEGEEK.forms.Form = function(f) {
    */
   this.getForm = function() {
     return form;
-  }
+  };
   
   /**
    * Handle's the form level errors.
@@ -1350,7 +1336,7 @@ ONEGEEK.forms.Form = function(f) {
         
     if (form) {
       // Set language if not EN
-      this.lang = (form.lang != '') ? form.lang : null;      
+      this.lang = (form.lang) ? form.lang : null;      
       
       // Custom configuration needed?
       if (_du.hasClass(form, 'custom')) {
@@ -1380,9 +1366,9 @@ ONEGEEK.forms.Form = function(f) {
 
       // Add validate() call to form
       form.onsubmit = this.validate.gbind(this);
-      form.onreset = this.reset.gbind(this);
+//      form.onreset = this.reset.gbind(this);
 //      _du.addEvent(form, 'submit', this.validate.bind(this));
-//      _du.addEvent(form, 'reset', this.reset);
+      _du.addEvent(form, 'reset', this.reset.gbind(this));
     }
   };
 
@@ -1418,7 +1404,6 @@ ONEGEEK.forms.Form = function(f) {
         } else {
           fieldObject = formFieldFactory.lookupFormField(classname, field);
         }
-
         
         // Did we find a field object?
         if (fieldObject) {
@@ -1433,8 +1418,7 @@ ONEGEEK.forms.Form = function(f) {
           // Add validation and context functions to field
           var element = fieldObject.getDOMElement();
           fieldObject.setForm(this);
-          fieldObject.setup();
-          
+          fieldObject.setup();          
 
           // Add the element to the array
           fields[fields.length] = fieldObject;
@@ -1463,36 +1447,6 @@ ONEGEEK.forms.GValidator = function() {
    * Must come from a user created ONEGEEK.forms.GValidator.plugin variable.
    */  
   this.readPlugins = function() {
-    
-    // Attempt to load convention based configuration files...    
-    try {
-      var scripts = document.getElementsByTagName('script');
-      var loaded = false;
-      for(var i = 0; i < scripts.length; i++) {
-        if(scripts[i].src.indexOf('gvalidator.js') > 0) {
-          loaded = true;
-          var s = scripts[i].src;
-//          console.log(s)
-          var path = s.substring(0, s.lastIndexOf('/')+1) ;         
-//          console.log('loading: ' + path + 'gvalidator-config.js');
-          _du.load(path + 'gvalidator-config.js');
-             
-          // Load lang files
-          var fs = document.getElementsByTagName('form');
-          for(var i = 0; i < fs.length; i++) {
-            if(fs[i].lang != '') {
-//              console.log("loading " + path + 'gvalidator_' + fs[i].lang + '.js');
-              _du.load(path + 'gvalidator_' + fs[i].lang + '.js');    
-            }
-          }
-          
-        }
-      }
-    } catch(e) {
-      // Nothing found
-//      console.log(e)
-    }
-        
     // Add each detected plugin to the form field registry 
     for(item in ONEGEEK.forms.GValidator.plugins) {
       formFieldFactory.registerFormField(item,ONEGEEK.forms.GValidator.plugins[item]._extends, ONEGEEK.forms.GValidator.plugins[item]);
@@ -1552,13 +1506,7 @@ function addLoadEventGVal(func) {
 }
 
 // Automatically validation to forms on load.
-addLoadEventGVal( function() {
-  gvalidator = new ONEGEEK.forms.GValidator();
+addLoadEventGVal( function() {    
+  gvalidator = new ONEGEEK.forms.GValidator();  
   gvalidator.autoApplyFormValidation();
 });
-
-function createBoundedWrapper(object, method) {
-  return function() {
-    return method.apply(object, arguments);
-  };
-}
