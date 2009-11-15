@@ -43,7 +43,7 @@
         <!-- Delete old files -->
         <delete  verbose="true">
             <fileset dir="../js/compressed">
-                <include name="*.js" />
+                <include name="**/*.js" />
             </fileset>
         </delete>
 

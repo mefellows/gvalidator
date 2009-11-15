@@ -65,12 +65,12 @@
            elementType : "logical_container"
        } ,        
        {
-           localName : "DOMUtilities",
-           fullName : "ONEGEEK.forms.DOMUtilities",
-           summary : "class DOMUtilities",
-           ref : "logical/ONEGEEK/forms/DOMUtilities.html",
-           parent : "ONEGEEK.forms",
-           type : "class",
+           localName : "Element",
+           fullName : "Element",
+           summary : "namespace Element",
+           ref : "logical/Element.html",
+           parent : "GLOBAL",
+           type : "namespace",
            elementType : "logical_container"
        } ,        
        {
@@ -210,19 +210,19 @@
        } ,        
        {
            localName : "addClass",
-           fullName : "ONEGEEK.forms.DOMUtilities.addClass",
-           summary : "public function void addClass(Object element, Object class)",
-           ref : "logical/ONEGEEK/forms/DOMUtilities.html#___addClass",
-           parent : "ONEGEEK.forms.DOMUtilities",
+           fullName : "Element.addClass",
+           summary : "public function void addClass(Object class)",
+           ref : "logical/Element.html#___addClass",
+           parent : "Element",
            type : "function",
            elementType : "function"
        } ,        
        {
            localName : "addEvent",
-           fullName : "ONEGEEK.forms.DOMUtilities.addEvent",
-           summary : "public function void addEvent(DOMElement element, String event, Function handler)",
-           ref : "logical/ONEGEEK/forms/DOMUtilities.html#___addEvent",
-           parent : "ONEGEEK.forms.DOMUtilities",
+           fullName : "Element.addEvent",
+           summary : "public function void addEvent(String event, Function handler)",
+           ref : "logical/Element.html#___addEvent",
+           parent : "Element",
            type : "function",
            elementType : "function"
        } ,        
@@ -417,10 +417,10 @@
        } ,        
        {
            localName : "findPos",
-           fullName : "ONEGEEK.forms.DOMUtilities.findPos",
+           fullName : "Element.findPos",
            summary : "public function Array findPos(Object obj)",
-           ref : "logical/ONEGEEK/forms/DOMUtilities.html#___findPos",
-           parent : "ONEGEEK.forms.DOMUtilities",
+           ref : "logical/Element.html#___findPos",
+           parent : "Element",
            type : "function",
            elementType : "function"
        } ,        
@@ -477,6 +477,15 @@
            parent : "ONEGEEK.forms.GValidator",
            type : "variable",
            elementType : "variable"
+       } ,        
+       {
+           localName : "gbind",
+           fullName : "Element.gbind",
+           summary : "public function Function gbind(Object object, Array args)",
+           ref : "logical/Element.html#___gbind",
+           parent : "Element",
+           type : "function",
+           elementType : "function"
        } ,        
        {
            localName : "gbind",
@@ -552,10 +561,10 @@
        } ,        
        {
            localName : "hasClass",
-           fullName : "ONEGEEK.forms.DOMUtilities.hasClass",
-           summary : "public function Boolean hasClass(Object element, Object class)",
-           ref : "logical/ONEGEEK/forms/DOMUtilities.html#___hasClass",
-           parent : "ONEGEEK.forms.DOMUtilities",
+           fullName : "Element.hasClass",
+           summary : "public function Boolean hasClass(Object class)",
+           ref : "logical/Element.html#___hasClass",
+           parent : "Element",
            type : "function",
            elementType : "function"
        } ,        
@@ -669,10 +678,10 @@
        } ,        
        {
            localName : "removeClass",
-           fullName : "ONEGEEK.forms.DOMUtilities.removeClass",
-           summary : "public function void removeClass(Object element, Object className)",
-           ref : "logical/ONEGEEK/forms/DOMUtilities.html#___removeClass",
-           parent : "ONEGEEK.forms.DOMUtilities",
+           fullName : "Element.removeClass",
+           summary : "public function void removeClass(Object className)",
+           ref : "logical/Element.html#___removeClass",
+           parent : "Element",
            type : "function",
            elementType : "function"
        } ,        
@@ -813,10 +822,10 @@
        } ,        
        {
            localName : "togglePopup",
-           fullName : "ONEGEEK.forms.DOMUtilities.togglePopup",
+           fullName : "Element.togglePopup",
            summary : "public function void togglePopup(Object source, Object target)",
-           ref : "logical/ONEGEEK/forms/DOMUtilities.html#___togglePopup",
-           parent : "ONEGEEK.forms.DOMUtilities",
+           ref : "logical/Element.html#___togglePopup",
+           parent : "Element",
            type : "function",
            elementType : "function"
        } ,        
