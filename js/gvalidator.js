@@ -1321,8 +1321,6 @@ ONEGEEK.forms.Form = function(f) {
                      'eMsgFunction', 
                      'fMsg',
                      'fMsgFormat', 
-                     'fMsgContainer', 
-                     'fMsgFunction', 
                      'reqShow',
                      'reqChar',
                      'reqPlacement',
@@ -1451,12 +1449,15 @@ ONEGEEK.forms.Form = function(f) {
     /**
      * Show FORM level errors.
      */    
-    switch(this.options.fMsgFormat) {
-      case 'container':
+    switch(typeof(this.options.fMsgFormat)) {
+      case 'string':
         
         // Remove old erros
         var el = document.getElementById('gvErrorsList');                
-        var c = document.getElementById(this.options.fMsgContainer); 
+        var c = document.getElementById(this.options.fMsgFormat);
+        if(!c) {
+          break;
+        }
         var l = document.createElement('ul');
         l.id = 'gvErrorsList';
         
@@ -1479,11 +1480,11 @@ ONEGEEK.forms.Form = function(f) {
         c.removeClass('hidden');
         
         // Scroll to the error container
-        window.location = '#' + this.options.fMsgContainer;
+        window.location = '#' + this.options.fMsgFormat;
         
         break;
       case 'function':
-        return this.options.fMsgFunction(fields);
+        return this.options.fMsgFormat(fields);
       default:        
         break;
     }
