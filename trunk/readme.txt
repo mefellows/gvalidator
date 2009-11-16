@@ -7,7 +7,7 @@ adds client-side validation to form elements, without needing to write a single 
 
 The aims of the project are to provide the following:
 
-	* A user-friendly experience
+	  * A user-friendly experience
     * A reusable and lightweight library            
     * Semantically clean code 
     * Standards compliant code
@@ -16,7 +16,7 @@ The aims of the project are to provide the following:
     * promote adoption via ease of use
 
 
-How to use GValidator
+How to use GValidator (Simple Usage)
 ----------------------------------------------------------------
 To use the library all you need to do is:
 
@@ -39,6 +39,91 @@ To use the library all you need to do is:
 
 There is no embedded JavaScript functions or invalid semantic markup here, just clean, straight-up XHTML.
     
+Advance GValidator usage
+----------------------------------------------------------------
+GValidator is quite flexible and extensible. It also provides a simple internationalization mechanisem.
+
+-- Configuration Options --
+GValidator has the following options, passed in to a variable with name 'ONEGEEK.forms.GValidator.options'.
+This variable is a literal object, containing key/value pairs.
+  
+    Parameter        Accepted Values                 Description
+    ==========================================================================================================================================
+    reqShow          [Boolean]                       Automatically add the required char to labels?
+    reqChar          [String]                        Character used to indicate a required field
+    reqPlacement     ['after', 'before']             Position of required character. Can be 'before' or 'after'
+    autoFocus        [true,false]                    Automatically focus the first form element on page load
+    supressAlert     [Boolean]                       Supresses the javascript alert on an invalid form submission 
+    highlightFields  [Boolean]                       Will apply a class name of 'highlight' to any invalid field on form submission attempt.    
+    
+    Element level messaging display options
+    ---------------------------------------
+    eMsgFormat       ['open','compact']              How to display messages next to the field. 
+                                                     - 'open' refers to always showing the message
+                                                     - 'compact' only shows if the user performs an event on the field's icon.
+    eMsgEventOn      [String (DOM Event)]            Only used if eMsgFormat = 'compact'. Event used to trigger message display toggle
+    eMsgEventOff     [null, 'click', 'mouseout' ...] Only used if eMsgFormat = 'compact'. Event used to trigger message hide toggle. 
+                                                     MUST NOT BE THE SAME AS 'eMsgEventOff' or they will cancel each other out
+    
+    Form level messaging display options
+    ------------------------------------
+    fMsgFormat       [null, String, Function]        How to display errors at the form level. 
+                                                     - null displays an alert to the user indicating there are errors to be corrected. See fMsg to override default message.
+                                                     - String - Pass in an id reference to a container div to place the errors in as a <ul class="gvErrorsList">
+                                                     - Function   - To do something custom on form submission error, pass in a function that accepts 1 parameter containing all of the error fields (ONEGEEK.forms.AbstractFormField[])   
+    fMsg             [String]                        A string alert to display on error i.e. "Please correct the highlighted errors!",
+
+    Image parameters for 'compact' messages
+    ------------------------------------------
+    icons: {
+      ok             [String]                        Path to the OK state icon
+      info           [String]                        Path to the INFO state icon
+      error:         [String]                        Path to the ERROR state icon
+    }
+
+-- Internationalization (I8N) --
+To specify a language translation for a form, simply do the following:
+
+- apply the W3C attribute 'lang' to the <form> with the value of the Country to translate i.e. lang="DE"
+- Create a variable with the name ONEGEEK.forms.GValidator.translation.<lang> i.e. ONEGEEK.forms.GValidator.translation.DE
+- In that Object map, each top level key should correspend to an existing validator type, and the second-level key/value pairs for the different message types
+  To set defaults across ALL validator types, use the special top-level key 'defaults' i.e. 
+
+ONEGEEK.forms.GValidator.translation.DE = {  
+    defaults: {
+      successMsg: 'Danke',
+      contextMsg: 'Bitte füllen Sie',
+      errorMsg: 'Kaputt! Es wurde ein Fehler beim Überprüfen diesem Bereich',
+      emptyMessage: 'Pflichtfeld, füllen Sie bitte.',
+    },        
+    firstname: {
+      contextMsg: 'Wir möchten Sie von Ihrem Namen zu nennen'
+    },
+    ...
+};
+
+- To set the form level error message, override the 'fMsg' property like the following:
+
+ONEGEEK.forms.GValidator.options = {  
+    fMsg: "Bitte korrigieren Sie die markierten Fehler!"
+};
+
+-- Extending GValidator (simple plugins) --
+Example of a new IP 4 Address validator:
+
+ONEGEEK.forms.GValidator.plugins = {
+    ip4address: {
+        _extends:     'GenericTextField',
+        regex:        /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/g,
+        cleanRegex:   /[^0-9\.]/g,
+        contextMessage: 'Please enter a valid IP 4 Address i.e. 127.0.0.1',
+        errorMessage: 'Please enter a valid IP 4 Address i.e. 127.0.0.1',   
+        successMessage: 'Thanks'  
+    }    
+};
+
+-- Extending GValidator (advanced) --
+ See the documentation at www.onegeek.com.au for more details on this.
     
 Also
 ----------------------------------------------------------------
@@ -58,7 +143,7 @@ Major updates include:
  - Empty fields now have separate error messages
  - Form level validation can be passed to a function handler via configuration
  - Form level validation errors can be displayed in a container div via a configuration option
- - Element
+ - Element level configuration options
  - DEPRECATION of the following params
    - ENABLE_COMPACT_MESSAGES (replace with config option eMsgFormat: 'compact')
    - ICON_* (replaced by config options icons: {error: 'image/path', info...} ) 
