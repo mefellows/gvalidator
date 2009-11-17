@@ -45,24 +45,6 @@ if (typeof ONEGEEK.forms == "undefined") {
  */
 
 /**
- * Binds an object and any number of args to a function.
- * 
- * gbind is used instead of the common 'bind' to avoid conflicts.
- * 
- * @function {public Function} gbind
- * @param {Object} object The object to bind to this function
- * @param {Array}  args   The args to pass to the function 
- * @return The function with the new 'this'.
- */
-Function.prototype.gbind = function(object, args) {
-  var func = this;
-  return function() {
-    return func.apply(object, args);
-  };
-};
-
-
-/**
  * Get the x and y coordinates of an element relative to the top left corner of the window
  * 
  * @function {public Array} findPos 
@@ -163,7 +145,7 @@ Element.prototype.addEvent = function(event, handler) {
  */
 Element.prototype.togglePopup = function(target) {
   var div = target;
-  var coords = this.findPos;
+  var coords = this.findPos();
   if (!div.hasClass('hidden')) {
     div.addClass('hidden');
   } else {
@@ -197,7 +179,7 @@ Element.prototype.togglePopup = function(target) {
 Function.prototype.gbind = function(object, args) {
   var func = this;
   return function() {
-    return func.apply(object, args);
+    return func.call(object, args);	   
   };
 };
 
@@ -221,7 +203,7 @@ Function.prototype.gbind = function(object, args) {
  * @return True if the key is in the array
  */ 
 Array.prototype.gcontains = function(needle) {  
-  for (key in this) {
+  for (var key in this) {
     if (this[key] === needle) {
       return true;
     }
@@ -360,7 +342,7 @@ ONEGEEK.forms.AbstractFormField = function(field) {
    */
   this.setOptions = function(options) {
     // Override property values if allowed
-    for(item in options) {      
+    for(var item in options) {      
       // Check if option is eligible
       if (propOptions.gcontains(item) === true ) {
         this[item] = options[item];
@@ -1706,7 +1688,7 @@ ONEGEEK.forms.GValidator = function() {
    */  
   this.readPlugins = function() {
     // Add each detected plugin to the form field registry 
-    for(item in ONEGEEK.forms.GValidator.plugins) {
+    for(var item in ONEGEEK.forms.GValidator.plugins) {
       formFieldFactory.registerFormField(item,ONEGEEK.forms.GValidator.plugins[item]._extends, ONEGEEK.forms.GValidator.plugins[item]);
     }
   };
