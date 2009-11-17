@@ -23,7 +23,7 @@ form.autoform span.required{float:left}
 /* Inputs */
 form.autoform input[type="text"]{padding:5px; background-color:#F5FFB0; border:solid 1px #999}
 form.autoform input[type="text"]:focus{background-color:#efefef;}
-
+form.autoform textarea{width:400px}
 form.autoform select{width:190px}
 form.autoform input.checkbox{float:none; display:inline}
 form.autoform label.checkbox,form.autoform label.radio{width:auto; float:none; display:inline;}

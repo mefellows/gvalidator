@@ -1191,7 +1191,7 @@ formFieldFactory.registerFormField('email','EmailField');
  */
 ONEGEEK.forms.GenericTextField = function(field) {
   this.field = field;
-  this.regex = /^.*$/;
+  this.regex = /[.\s]*/m;
   this.cleanRegex = /[<>\/\\\(\);]/g;
 };
 
