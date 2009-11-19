@@ -52,7 +52,7 @@ ONEGEEK.forms.GValidator.options = {
       },
       
       // Container params example
-       fMsgFormat: 'errors',
+      //fMsgFormat: 'errors',
       
       // We are using a function which alerts, so stop the default alert from occuring
       supressAlert: true
