@@ -17,6 +17,19 @@ ONEGEEK.forms.GValidator.plugins = {
         cleanRegex:   /[^0-9\.]/g,
         contextMessage: 'Please enter a valid IP 4 Address i.e. 127.0.0.1',
         errorMessage: 'Please enter a valid IP 4 Address i.e. 127.0.0.1',   
-        successMessage: 'Thanks'  
+        successMessage: 'Thanks',
+        validate: function() {
+              if(!this._validate()) {
+                this.highlight();
+              } else {
+                this.unHighlight();
+              }
+        },
+        highlight: function() {
+          this.field.style.background = 'rgb(200,0,0)';
+        },
+        unHighlight: function() {
+          this.field.style.background = 'rgb(255,255,255)';
+        }        
     }    
 };
