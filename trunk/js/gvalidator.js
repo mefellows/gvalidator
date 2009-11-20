@@ -319,7 +319,7 @@ ONEGEEK.forms.AbstractFormField = function(field) {
    * 
    * @var {private String[]} propOptions
    */
-  var propOptions = ['errorMsg','emptyMsg', 'successMsg', 'contextMsg', 'regex', 'cleanRegex'];
+  var propOptions = ['errorMsg','emptyMsg', 'successMsg', 'contextMsg', 'regex', 'cleanRegex', 'validate'];
   
   /**
    * The parent ONEGEEK.forms.form class
@@ -346,8 +346,14 @@ ONEGEEK.forms.AbstractFormField = function(field) {
   this.setOptions = function(options) {
     // Override property values if allowed
     for(var item in options) {      
-      // Check if option is eligible
-      if (propOptions.gcontains(item) === true ) {
+      // Check if option is eligible or is a function
+      if (propOptions.gcontains(item) === true || typeof(options[item]) == 'function') {
+        // If option already exists, then back it up with an '_' prefix so that it can still be 'inherited'
+        if(this[item] != null) {
+          this['_' + item] = this[item];
+        }
+        
+        // Set new option
         this[item] = options[item];
       }
     }
