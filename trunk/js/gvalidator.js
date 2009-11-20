@@ -75,7 +75,7 @@ ONEGEEK.forms.DOMUtilities = function() {
   this.togglePopup = function(source, target) {
     var div = target;
     var coords = this.findPos(source);
-    if (!_du.hasClass(hasClass(div, 'hidden'))) {
+    if (!_du.hasClass(div, 'hidden')) {
       this.addClass(div, 'hidden');
     } else {
       div.style.position = 'absolute';
