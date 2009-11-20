@@ -15,9 +15,9 @@ ONEGEEK.forms.GValidator.plugins = {
         _extends:     'GenericTextField',
         regex:        /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/g,
         cleanRegex:   /[^0-9\.]/g,
-        contextMessage: 'Please enter a valid IP 4 Address i.e. 127.0.0.1',
-        errorMessage: 'Please enter a valid IP 4 Address i.e. 127.0.0.1',   
-        successMessage: 'Thanks',
+        contextMsg: 'Please enter a valid IP 4 Address i.e. 127.0.0.1',
+        errorMsg: 'Please enter a valid IP 4 Address i.e. 127.0.0.1',   
+        successMsg: 'Thanks',
         validate: function() {
               if(!this._validate()) {
                 this.highlight();
