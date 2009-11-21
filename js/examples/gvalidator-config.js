@@ -6,7 +6,7 @@ ONEGEEK.forms.GValidator.options = {
     reqPlacement: 'after',    // Position of required character. Can be 'before' or 'after'
     autoFocus: true,          // Automatically focus the first form element on page load
     supressAlert: false,      // Supresses the javascript alert on an invalid form submission 
-    highlightFields: true,    // Will apply a class name of 'highlight' to any invalid field on form submission attempt.    
+    highlightFields: 'highlight',    // Will apply a class name of 'highlight' to any invalid field on form submission attempt.    
     
     // Element level formatting options 
     eMsgFormat: 'compact',
