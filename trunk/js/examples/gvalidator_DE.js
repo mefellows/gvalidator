@@ -2,7 +2,8 @@ ONEGEEK.forms.GValidator.translation.DE = {
     defaults: {
       successMsg: 'Danke',
       contextMsg: 'Bitte füllen Sie',
-      errorMsg: 'Kaputt! Es wurde ein Fehler beim Überprüfen diesem Bereich'
+      errorMsg: 'Kaputt! Es wurde ein Fehler beim Überprüfen diesem Bereich',
+      emptyMsg: '%field% erforderlich ist, füllen Sie bitte'
     },        
     ip4address :{
       successMsg :'Danke schoen!',
