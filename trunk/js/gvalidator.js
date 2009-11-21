@@ -1756,7 +1756,7 @@ ONEGEEK.forms.GValidator = function() {
     }
     
     // Fixes IE issue that input element isn't rendered in time
-    setTimeout(function() {this.applyFocus()}.gbind(this), 500);
+    setTimeout(function() {this.applyFocus();}.gbind(this), 500);
   };
   
   // Initialize Plugins
