@@ -35,7 +35,7 @@ ONEGEEK.forms.GValidator.options = {
       // Image params
       icons: {
         error:  '../images/icons/custom/asterisk_orange.png',
-        info:   '../images/icons/custom/comment.gif',
+        info:   '../images/icons/custom/comment.gif'
       }, 
 
       // Form params
