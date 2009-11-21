@@ -313,14 +313,7 @@ ONEGEEK.forms.AbstractFormField = function(field) {
    * @var {protected String} className
    */
   this.className = null;
-  
-  /**
-   * Options that can be overridden by plugins/translations.
-   * 
-   * @var {private String[]} propOptions
-   */
-  var propOptions = ['errorMsg','emptyMsg', 'successMsg', 'contextMsg', 'regex', 'cleanRegex', 'validate'];
-  
+
   /**
    * The parent ONEGEEK.forms.form class
    * 
@@ -346,16 +339,13 @@ ONEGEEK.forms.AbstractFormField = function(field) {
   this.setOptions = function(options) {
     // Override property values if allowed
     for(var item in options) {      
-      // Check if option is eligible or is a function
-      if (propOptions.gcontains(item) === true || typeof(options[item]) == 'function') {
-        // If option already exists, then back it up with an '_' prefix so that it can still be 'inherited'
-        if(this[item] != null) {
-          this['_' + item] = this[item];
-        }
-        
-        // Set new option
-        this[item] = options[item];
+      // If option already exists, then back it up with an '_' prefix so that it can still be 'inherited'
+      if(this[item] != null) {
+        this['_' + item] = this[item];
       }
+      
+      // Set new option
+      this[item] = options[item];      
     }
   };
   
@@ -422,11 +412,16 @@ ONEGEEK.forms.AbstractFormField = function(field) {
   /**
    * Automatically sets the label for this element.
    * 
-   * @function {public void} setLabel
-   * @return void
+   * @function {public Boolean} setLabel
+   * @return The result of the label find
    */
   this.setLabel = function() {
-    // Extract the label from the form, or use 'Field' otherwise
+    // Already have a label?
+    if (this.label) {
+      return true;
+    }
+    
+    // Extract the label from the form, Legend or use 'Field' otherwise
     try {
 
       if (this.field.type != 'checkbox' && this.field.type != 'radio') {
@@ -550,6 +545,29 @@ ONEGEEK.forms.AbstractFormField = function(field) {
   };
   
   /**
+   * Highlights the field according to GValidator options
+   * @function {public void} highlight
+   * @retur void
+   */
+  this.highlight = function() {    
+    if(!this.form.options.highlightFields) {
+      // Do nothing
+      return;
+    }
+    
+    // Remove the class
+    _du.removeClass(this.field, this.form.options.highlightFields);
+    
+    // Add class if error
+    switch (this.state) {
+      case ONEGEEK.forms.FIELD_STATUS_EMPTY:
+      case ONEGEEK.forms.FIELD_STATUS_ERROR:
+        _du.addClass(this.field, this.form.options.highlightFields.toString());
+        break;        
+    }
+  };
+  
+  /**
    * Set the state of the field. This will show the relevant icons and error messages for the field
    * 
    * @function {public void} setState
@@ -560,6 +578,7 @@ ONEGEEK.forms.AbstractFormField = function(field) {
     this.state = state;
     
     // Remove previous messages
+    this.highlight();
     _du.removeClass(this.msgSpan, 'error');
     _du.removeClass(this.msgSpan, 'info');
     _du.removeClass(this.msgSpan, 'ok');
@@ -1315,7 +1334,8 @@ ONEGEEK.forms.Form = function(f) {
                      'reqShow',
                      'reqChar',
                      'reqPlacement',
-                     'supressAlert'
+                     'supressAlert',
+                     'highlightFields'
                     ]; 
   
   /**
@@ -1337,7 +1357,8 @@ ONEGEEK.forms.Form = function(f) {
       eMsgFormat: 'open',
       eMsgEventOn: 'click',
       eMsgEventOff: null,
-      autoFocus: true
+      autoFocus: true,
+      highlightFields: 'highlight'
   };
  
   /**
@@ -1436,7 +1457,7 @@ ONEGEEK.forms.Form = function(f) {
     if(this.options.supressAlert !== true) {
       alert(this.options.fMsg);
     }
-    
+
     /**
      * Show FORM level errors.
      */    
@@ -1502,9 +1523,9 @@ ONEGEEK.forms.Form = function(f) {
       // shows instead of the info if there is an error
       fields[i].setModified(true);
 
-      // Highlight any errors along the way
+      // Collect errors along the way
       var valid = fields[i].validate();
-
+      
       // Check if field has validated AND
       // if it is a required field
       if (!valid && fields[i].isRequiredField()) {        
@@ -1721,9 +1742,7 @@ ONEGEEK.forms.GValidator = function() {
    * @function {public void} autoApplyFormValidation
    * @return void
    */
-  this.autoApplyFormValidation = function() {
-    
-    
+  this.autoApplyFormValidation = function() {        
     var forms = document.getElementsByTagName('form');
     
     for (var i = 0; i < forms.length; i++) {
@@ -1736,7 +1755,8 @@ ONEGEEK.forms.GValidator = function() {
       }
     }
     
-    this.applyFocus();
+    // Fixes IE issue that input element isn't rendered in time
+    setTimeout(function() {this.applyFocus()}.gbind(this), 500);
   };
   
   // Initialize Plugins
