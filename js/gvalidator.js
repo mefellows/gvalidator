@@ -547,7 +547,7 @@ ONEGEEK.forms.AbstractFormField = function(field) {
   /**
    * Highlights the field according to GValidator options
    * @function {public void} highlight
-   * @retur void
+   * @return void
    */
   this.highlight = function() {    
     if(!this.form.options.highlightFields) {
@@ -1528,9 +1528,12 @@ ONEGEEK.forms.Form = function(f) {
       
       // Check if field has validated AND
       // if it is a required field
-      if (!valid && fields[i].isRequiredField()) {        
-          errors[errors.length] = fields[i];
-          errorsE[errorsE.length] = fields[i].getDOMElement();
+      if (!valid) {
+          // If field isn't required, but is filled out and invalid OR field is required - halt!
+          if( (!fields[i].isRequiredField() && fields[i].value != null) || fields[i].isRequiredField() ) {
+            errors[errors.length] = fields[i];
+            errorsE[errorsE.length] = fields[i].getDOMElement();           
+          }
       }
     }
 
