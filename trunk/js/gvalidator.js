@@ -3,7 +3,7 @@
  * 
  * @project GValidator
  * @author Matt Fellows, OneGeek Software (http://www.onegeek.com.au)
- * @version $Rev$
+ * @version $Rev: 79 $
  * @description JavaScript Form Validation Library
  * 
  */
@@ -1179,6 +1179,81 @@ ONEGEEK.forms.PhoneField.prototype = new ONEGEEK.forms.AbstractTextField();
 formFieldFactory.registerFormField('phone','PhoneField');
 
 /**
+ * Password Field. Validates a password field, mandating between 6 - 32 chars.
+ * 
+ * @class ONEGEEK.forms.PasswordField
+ * @extends ONEGEEK.forms.AbstractFormField
+ */
+ONEGEEK.forms.PasswordField = function(field) {
+  this.field = field;
+  this.regex = /^.*(?=.{8,})(?=.*[a-z])(?=.*[A-Z])(?=.*[\d\W]).*$/;
+  this.cleanRegex = '';
+  this.errorMsg = 'Please enter a password at least 8 characters in length using digits, lower and uppercase letters';
+  this.contextMsg = this.errorMsg;
+};
+
+// Subclass FormField
+ONEGEEK.forms.PasswordField.prototype = new ONEGEEK.forms.AbstractTextField();
+
+// Register the field type with FormFieldFactory
+formFieldFactory.registerFormField('password','PasswordField');
+
+/**
+ * Confirm Password Field. Confirms that the password field .
+ * 
+ * @class ONEGEEK.forms.ConfirmPasswordField
+ * @extends ONEGEEK.forms.PassworField
+ */
+ONEGEEK.forms.ConfirmPasswordField = function(field) {
+  this.field = field;
+  this.errorMsg = 'Please confirm your password';
+  this.contextMsg = this.errorMsg;
+  
+  /**
+   * Overrides the validate function. Validates regex and compares to initial password.
+   */  
+  this.validate = function() {
+    if (this.field.value) {
+        this.clean();
+
+        this.pattern = new RegExp(this.regex);
+        var validated = this.pattern.test(this.field.value);
+
+        // If valid syntax, check if it matches the initial password
+        if (validated) {
+        	var confirm = document.getElementById('password');
+        	if(this.field.value != confirm.value) {
+        		validated = false;
+        	}
+        }
+        
+        // Check if field passes and show message
+        if (validated) {
+          this.setState(ONEGEEK.forms.FIELD_STATUS_OK);
+        } else {
+          this.setState(ONEGEEK.forms.FIELD_STATUS_ERROR);
+        }
+        return validated;
+      }
+      
+      // Show info if empty and not modified or not required
+      if (this.modified === false || this.isRequired === false) {
+        this.setState(ONEGEEK.forms.FIELD_STATUS_INFO);
+      } else {
+        this.setState(ONEGEEK.forms.FIELD_STATUS_EMPTY);
+      }
+
+      return false;
+  };
+};
+
+// Subclass PasswordField
+ONEGEEK.forms.ConfirmPasswordField.prototype = new ONEGEEK.forms.PasswordField();
+
+// Register the field type with FormFieldFactory
+formFieldFactory.registerFormField('confirmpassword','ConfirmPasswordField');
+
+/**
  * Email Field. 
  * 
  * Validate an email address. 
@@ -1567,9 +1642,13 @@ ONEGEEK.forms.Form = function(f) {
     // @todo: fix this (what about select boxes etc?)
     if(this.options.autoFocus === true) {
       var inputs = document.getElementsByTagName('input');
-      if(inputs.length > 0) {
-        inputs[0].focus();
-      }
+      
+      for(var i in inputs) {
+    	  if(inputs[i].type != 'hidden') {
+    		  inputs[i].focus(); 
+    		  return true; 
+    	  }
+      }     
     }
   };
   
