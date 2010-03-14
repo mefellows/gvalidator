@@ -1221,6 +1221,9 @@ ONEGEEK.forms.ConfirmPasswordField = function(field) {
 
         this.pattern = new RegExp(this.regex);
         var validated = this.pattern.test(this.field.value);
+        
+        // Reset last index for Safari! (Issue 15)
+        this.pattern.lastIndex = 0;
 
         // If valid syntax, check if it matches the initial password
         if (validated) {
