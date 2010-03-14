@@ -1104,6 +1104,9 @@ ONEGEEK.forms.AbstractTextField = function(field) {
       this.pattern = new RegExp(this.regex);
       var validated = this.pattern.test(this.field.value);
 
+      // Reset last index for Safari! (Issue 15)
+      this.pattern.lastIndex = 0;
+      
       // Check if field passes and show message
       if (validated) {
         this.setState(ONEGEEK.forms.FIELD_STATUS_OK);
