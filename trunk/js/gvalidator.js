@@ -1659,17 +1659,18 @@ ONEGEEK.forms.Form = function(f) {
   };
   
   /**
-   * Get a field by it's name
+   * Get a field by it's name, note that this does not return the DOM element. 
+   * (you can get this by calling getDOMElement() on a positive result however).
    * 
-   * @function {private DOMElement} getFieldByName
-   * @param {Object} name The name attribute of the element
-   * @return The DOM Element field if found, otherwise null
+   * @function {private AbstractFormField} getFieldByName
+   * @param {String} name The name attribute of the element
+   * @return The AbstractFormField Element field if found, otherwise null
    */
-  var getFieldByName = function(name) {
+  this.getFieldByName = function(name) {	  
     var field = null;
     for ( var i = 0; i < fields.length; i++) {
       if (fields[i].getDOMElement().name == name) {
-        return fields[i].getDOMElement();
+        return fields[i];
       }
     }
 
@@ -1736,7 +1737,7 @@ ONEGEEK.forms.Form = function(f) {
     if (field && field.type == 'text' || field.type == 'password' || field.type == 'textarea' || field.type == 'select-one' || field.type == 'select-multiple' || field.type == 'checkbox' || field.type == 'file' || field.type == 'radio') {      
       
       // Only apply validation if field is not already being monitored
-      if (!getFieldByName(field.name)) {
+      if (!this.getFieldByName(field.name)) {
         // Check class names
         var classname = field.className;
         var fieldObject = null;
@@ -1795,6 +1796,32 @@ ONEGEEK.forms.GValidator = function() {
    * @var {ONEGEEK.forms.Form[]} gForms
    */
   var gForms = [];
+  
+  /**
+   * Get all ONEGEEK.forms.Form's under management.
+   *  
+   * @function {Array<ONEGEEK.forms.Form>} getGForms
+   * @return {Array<ONEGEEK.forms.Form>} The set of forms that are currently being automated.
+   */
+  this.getGForms = function() {
+	return gForms;  
+  };
+
+  /**
+   * Get a specific ONEGEEK.forms.Form's by the DOM Form's id.
+   *  
+   * @function {ONEGEEK.forms.Form|null} getGForm
+   * @param {String} id The id of the form to fetch.
+   * @return {ONEGEEK.forms.Form|null} The ONEGEEK.forms.Form if found, else null.
+   */  
+  this.getGForm = function(id) {
+	  for (var i = 0; i < gForms.length; i++) {
+		  var f = gForms[i].getForm();
+		  if (f && f.id == id) {
+			  return gForms[i];
+		  }
+	  }
+  };
   
   /**
    * Read in any user-defined plug-ins.
