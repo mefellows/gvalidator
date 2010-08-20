@@ -178,12 +178,14 @@ var _du = new ONEGEEK.forms.DOMUtilities();
  * @return {boolean} result false
  */
 function stopEvent(e) {	  
-	if (e) {		
-		if(e.cancelBubble !== undefined) { // IE
-	    	e.cancelBubble = true;
-	    } else { // W3C compliant
+	if (e) {	
+		var type = typeof(e.stopPropagation)
+		if (type == 'function') { // W3C compliant
 	    	e.stopPropagation();
 	    	e.preventDefault();
+	    }
+		else if(e.cancelBubble !== undefined) { // IE
+	    	e.cancelBubble = true;
 	    } 
 	}
 	return false;
