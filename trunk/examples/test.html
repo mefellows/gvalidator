@@ -9,9 +9,9 @@
 
   <h1>GValidator Example</h1>
   <p>Fields marked with a <span class="required">*</span> are required.</p> 
-   <form action="" method="post" id="autoform" class="autoform" >
+   <form action="" method="post" id="autoform" class="autoform" onSubmit="if (console) {console.log('onSubmit() action called successfully'); };">
     <input type="hidden" name="hidden" value="hiddenval-wont-get-focus" />
-    <div><label for="firstname">First Name</label><input type="text" name="firstname" class="firstname required" id="firstname" maxlength="30"/></div>        
+    <div><label for="firstname">First Name</label><input type="text" name="firstname" class="firstname required depends[anotherelement,value]" id="firstname" maxlength="30"/></div>        
     <div><label for="lastname">Last Name</label><input type="text" name="lastname" class="lastname required" id="lastname" maxlength="30"/></div>
     <div><label for="password">Password</label><input type="password" name="password" class="password required" id="password" maxlength="32"/></div>
     <div><label for="confirmpassword">Confirm Password</label><input type="password" name="confirmpassword" class="confirmpassword required" id="confirmpassword" maxlength="32"/></div>
@@ -43,6 +43,13 @@
         <option value="yellowpagesonline">Test 2</option>
       </select>
     </div>     
+    <div id="checkboxdiv3">
+        <fieldset>
+          <legend>Source code3</legend>
+          <input type="checkbox" id="source3" name="download3" value="source3" class="checkbox required"/><label class="checkbox" for="source3">Source3</label>
+          <input type="checkbox" id="compressed3" name="download3" value="compressed3" class="checkbox required"/><label class="checkbox" for="compressed3">Compressed3</label>
+        </fieldset>
+    </div>	
     <div id="radiodiv">
 	    <fieldset>
 	      <legend>Sex</legend>
@@ -74,6 +81,6 @@
     </div> 
     <div id="submitdiv"><input id="submit" type="submit"/><input type="reset" /></div>     
   </form>
-  <script type="text/javascript" src="../js/compressed/gvalidator.js" defer="defer"></script> 
+  <script type="text/javascript" src="../js/gvalidator.js" defer="defer"></script> 
   </body>
 </html>
