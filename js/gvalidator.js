@@ -122,8 +122,8 @@ ONEGEEK.forms.DOMUtilities = function() {
    * Add a class name to an element
    * 
    * @function {public void} addClass
-   * @param {Object} element  The element to check
-   * @param {Object} class    The class to add to the element
+   * @param {Object} element      The element to check
+   * @param {String} className    The class to add to the element
    * @return void
    */
   this.addClass = function(element, className) {
@@ -135,9 +135,9 @@ ONEGEEK.forms.DOMUtilities = function() {
   };
 
   /**
-   * Attach an event to an element. 
-   * Handles for most browsers NB. 
-   * To make it work in crappy old browsers assign the element an id
+   * Attach an event to an element, handling cross-browser implementations. 
+   * 
+   * NB. To make it work in crappy old browsers assign the element an id.
    * 
    * @function {public void} addEvent
    * @param {DOMElement}  element The element to add the event to
@@ -149,7 +149,7 @@ ONEGEEK.forms.DOMUtilities = function() {
     if (element.attachEvent) { // IE (6+?)
       element.attachEvent('on' + event, handler);
     } else if (element.addEventListener) { // Most nice browsers
-      element.addEventListener(event, handler, false);
+      element.addEventListener(event, handler, true);
     } else { // Old browsers
       // Assign an id based on the time for this element if it has no id
       if (!element.id) {
@@ -159,10 +159,35 @@ ONEGEEK.forms.DOMUtilities = function() {
       eval('document.getElementById(' + element.id + ').on' + event + '=' + handler);
     }
   };
+  
+  
 };
 
 // Create a global (quasi-singleton) instance of the factory
 var _du = new ONEGEEK.forms.DOMUtilities();
+
+/**
+ * Stop the current event and return false to the current function.
+ * 
+ * NB: This assumes that the cross browser event has been passed in
+ *     i.e. IE this is window.event, FF\W3C compliant this is the event
+ *     passed in as an arg to the event listener
+ * 
+ * @function {public boolean} stopEvent
+ * @param {Event} e The event object
+ * @return {boolean} result false
+ */
+function stopEvent(e) {	  
+	if (e) {		
+		if(e.cancelBubble !== undefined) { // IE
+	    	e.cancelBubble = true;
+	    } else { // W3C compliant
+	    	e.stopPropagation();
+	    	e.preventDefault();
+	    } 
+	}
+	return false;
+};
 
 /**
  * Additions to the Function prototype.
@@ -172,7 +197,7 @@ var _du = new ONEGEEK.forms.DOMUtilities();
 /**
  * Binds an object and any number of args to a function.
  * 
- * gbind is used instead of the common 'bind' to avoid conflicts.
+ * gbind is used instead of the common 'bind' in other libraries to avoid conflicts.
  * 
  * @function {public Function} gbind
  * @param {Object} object The object to bind to this function
@@ -183,6 +208,24 @@ Function.prototype.gbind = function(object, args) {
   var func = this;
   return function() {
     return func.call(object, args);	   
+  };
+};
+
+/**
+ * Binds an object and any number of args to a function, passing along any event object with the call as the first arg.
+ * 
+ * gbind is used instead of the common 'bind' in other libraries to avoid conflicts.
+ * 
+ * @function {public Function} gbind
+ * @param {Object} object The object to bind to this function
+ * @param {Array}  args   The args to pass to the function 
+ * @return The function with the new 'this'.
+ */
+Function.prototype.gbindEvent = function(object, args) {
+  var func = this;
+  return function(e) {
+	  e = e || window.event;
+    return func.call(object, e, args);	   
   };
 };
 
@@ -774,7 +817,7 @@ ONEGEEK.forms.AbstractFormField = function(field) {
     } else {
       this.setState(ONEGEEK.forms.FIELD_STATUS_EMPTY);
     }
-
+    
     return false;
   };
 
@@ -889,19 +932,19 @@ ONEGEEK.forms.ComboBox = function(field) {
    * 
    * @return true if there is a value, false if not
    */
-  this.validate = function() {
-    if (this.field.value && this.field.value !== '') {
-      this.setState(ONEGEEK.forms.FIELD_STATUS_OK);
-      return true;
-    }
-    if (this.modified === false || !this.isRequired) {
-      this.setState(ONEGEEK.forms.FIELD_STATUS_INFO);
-    } else {
-      this.setState(ONEGEEK.forms.FIELD_STATUS_EMPTY);
-    }
-
-    return false;
-  };
+    this.validate = function() {
+	    if (this.field.value && this.field.value !== '') {
+	      this.setState(ONEGEEK.forms.FIELD_STATUS_OK);
+	      return true;
+	    }
+	    if (this.modified === false || !this.isRequired) {
+	      this.setState(ONEGEEK.forms.FIELD_STATUS_INFO);
+	    } else {
+	      this.setState(ONEGEEK.forms.FIELD_STATUS_EMPTY);
+	    }
+	
+	    return false;
+    };
 
   /**
    * Override setup function.
@@ -955,24 +998,24 @@ ONEGEEK.forms.Checkbox = function(field) {
   /**
    * Override validation function
    */
-  this.validate = function() {
-    // Check if the form has a value set for this checkbox
-    // by cycling through all of the checkboxes
-    var elements = document.forms[0].elements[this.field.name];
-    for (i = 0; i < elements.length; i++) {
-      if (elements[i].checked) {
-        this.setState(ONEGEEK.forms.FIELD_STATUS_OK);
-        return true;
-      } else {
-        if (this.modified !== true || !this.isRequired) {
-          this.setState(ONEGEEK.forms.FIELD_STATUS_INFO);
-        } else {
-          this.setState(ONEGEEK.forms.FIELD_STATUS_EMPTY);
-        }
-      }
-    }
-    return false;
-  };
+    this.validate = function() {
+	    // Check if the form has a value set for this checkbox
+	    // by cycling through all of the checkboxes
+	    var elements = document.forms[0].elements[this.field.name];
+	    for (i = 0; i < elements.length; i++) {
+	      if (elements[i].checked) {
+	        this.setState(ONEGEEK.forms.FIELD_STATUS_OK);
+	        return true;
+	      } else {
+	        if (this.modified !== true || !this.isRequired) {
+	          this.setState(ONEGEEK.forms.FIELD_STATUS_INFO);
+	        } else {
+	          this.setState(ONEGEEK.forms.FIELD_STATUS_EMPTY);
+	        }
+	      }
+	    }
+	    return false;
+    };
 
   /**
    * Override the setup function: 
@@ -1055,24 +1098,24 @@ ONEGEEK.forms.RadioButton = function(field) {
   /**
    * Override validation function:
    */
-  this.validate = function() {
-    // Check if the form has a value set for this checkbox
-    // by cycling through all of the checkboxes
-    var elements = document.forms[0].elements[this.field.name];
-    for (i = 0; i < elements.length; i++) {
-      if (elements[i].checked) {
-        this.setState(ONEGEEK.forms.FIELD_STATUS_OK);
-        return true;
-      } else {
-        if (this.modified !== true || !this.isRequired) {
-          this.setState(ONEGEEK.forms.FIELD_STATUS_INFO);
-        } else {
-          this.setState(ONEGEEK.forms.FIELD_STATUS_EMPTY);
-        }
-      }
-    }
-    return false;
-  };
+    this.validate = function() {
+	    // Check if the form has a value set for this checkbox
+	    // by cycling through all of the checkboxes
+	    var elements = document.forms[0].elements[this.field.name];
+	    for (i = 0; i < elements.length; i++) {
+	      if (elements[i].checked) {
+	        this.setState(ONEGEEK.forms.FIELD_STATUS_OK);
+	        return true;
+	      } else {
+	        if (this.modified !== true || !this.isRequired) {
+	          this.setState(ONEGEEK.forms.FIELD_STATUS_INFO);
+	        } else {
+	          this.setState(ONEGEEK.forms.FIELD_STATUS_EMPTY);
+	        }
+	      }
+	    }
+	    return false;
+	};
 };
 
 // Inherits from the AbstractFormField
@@ -1098,33 +1141,33 @@ ONEGEEK.forms.AbstractTextField = function(field) {
   /**
    * Overrides the validate function. Defaults to evaluating a regular expression
    */
-  this.validate = function() {
-    if (this.field.value) {
-      this.clean();
-      this.pattern = new RegExp(this.regex);
-      var validated = this.pattern.test(this.field.value);
-
-      // Reset last index for Safari! (Issue 15)
-      this.pattern.lastIndex = 0;
-      
-      // Check if field passes and show message
-      if (validated) {
-        this.setState(ONEGEEK.forms.FIELD_STATUS_OK);
-      } else {
-        this.setState(ONEGEEK.forms.FIELD_STATUS_ERROR);
-      }
-      return validated;
-    }
-    
-    // Show info if empty and not modified or not required
-    if (this.modified === false || this.isRequired === false) {
-      this.setState(ONEGEEK.forms.FIELD_STATUS_INFO);
-    } else {
-      this.setState(ONEGEEK.forms.FIELD_STATUS_EMPTY);
-    }
-
-    return false;
-  };
+    this.validate = function() {
+	    if (this.field.value) {
+	      this.clean();
+	      this.pattern = new RegExp(this.regex);
+	      var validated = this.pattern.test(this.field.value);
+	
+	      // Reset last index for Safari! (Issue 15)
+	      this.pattern.lastIndex = 0;
+	      
+	      // Check if field passes and show message
+	      if (validated) {
+	        this.setState(ONEGEEK.forms.FIELD_STATUS_OK);
+	      } else {
+	        this.setState(ONEGEEK.forms.FIELD_STATUS_ERROR);
+	      }
+	      return validated;
+	    }
+	    
+	    // Show info if empty and not modified or not required
+	    if (this.modified === false || this.isRequired === false) {
+	      this.setState(ONEGEEK.forms.FIELD_STATUS_INFO);
+	    } else {
+	      this.setState(ONEGEEK.forms.FIELD_STATUS_EMPTY);
+	    }
+	
+	    return false;
+    };
 
   /**
    * Overrides the clean function. Defaults to removing illegal chars
@@ -1215,42 +1258,42 @@ ONEGEEK.forms.ConfirmPasswordField = function(field) {
   /**
    * Overrides the validate function. Validates regex and compares to initial password.
    */  
-  this.validate = function() {
-    if (this.field.value) {
-        this.clean();
-
-        this.pattern = new RegExp(this.regex);
-        var validated = this.pattern.test(this.field.value);
-        
-        // Reset last index for Safari! (Issue 15)
-        this.pattern.lastIndex = 0;
-
-        // If valid syntax, check if it matches the initial password
-        if (validated) {
-        	var confirm = document.getElementById('password');
-        	if(this.field.value != confirm.value) {
-        		validated = false;
-        	}
-        }
-        
-        // Check if field passes and show message
-        if (validated) {
-          this.setState(ONEGEEK.forms.FIELD_STATUS_OK);
-        } else {
-          this.setState(ONEGEEK.forms.FIELD_STATUS_ERROR);
-        }
-        return validated;
-      }
-      
-      // Show info if empty and not modified or not required
-      if (this.modified === false || this.isRequired === false) {
-        this.setState(ONEGEEK.forms.FIELD_STATUS_INFO);
-      } else {
-        this.setState(ONEGEEK.forms.FIELD_STATUS_EMPTY);
-      }
-
-      return false;
-  };
+    this.validate = function() {
+	    if (this.field.value) {
+	        this.clean();
+	
+	        this.pattern = new RegExp(this.regex);
+	        var validated = this.pattern.test(this.field.value);
+	        
+	        // Reset last index for Safari! (Issue 15)
+	        this.pattern.lastIndex = 0;
+	
+	        // If valid syntax, check if it matches the initial password
+	        if (validated) {
+	        	var confirm = document.getElementById('password');
+	        	if(this.field.value != confirm.value) {
+	        		validated = false;
+	        	}
+	        }
+	        
+	        // Check if field passes and show message
+	        if (validated) {
+	          this.setState(ONEGEEK.forms.FIELD_STATUS_OK);
+	        } else {
+	          this.setState(ONEGEEK.forms.FIELD_STATUS_ERROR);
+	        }
+	        return validated;
+	      }
+	      
+	      // Show info if empty and not modified or not required
+	      if (this.modified === false || this.isRequired === false) {
+	        this.setState(ONEGEEK.forms.FIELD_STATUS_INFO);
+	      } else {
+	        this.setState(ONEGEEK.forms.FIELD_STATUS_EMPTY);
+	      }
+	
+	      return false;
+    };
 };
 
 // Subclass PasswordField
@@ -1592,49 +1635,49 @@ ONEGEEK.forms.Form = function(f) {
    * @function {public Boolean} validate
    * @return true if form is valid, false otherwise
    */
-  this.validate = function() {
-    var firstErrorElement = null;
-    var errors = [];
-    var errorsE = [];
-    
-    // Call the validate events on each of the inputs
-    // To update the status of each field
-    for ( var i = 0; i < fields.length; i++) {
-      // Set the fields status to modified, so the alert icon
-      // shows instead of the info if there is an error
-      fields[i].setModified(true);
-
-      // Collect errors along the way
-      var valid = fields[i].validate();
-      
-      // Check if field has validated AND
-      // if it is a required field
-      if (!valid) {
-          // If field isn't required, but is filled out and invalid OR field is required - halt!
-          if( (!fields[i].isRequiredField() && fields[i].value != null) || fields[i].isRequiredField() ) {
-            errors[errors.length] = fields[i];
-            errorsE[errorsE.length] = fields[i].getDOMElement();           
-          }
-      }
-    }
-
-    // If an element was found, move the focus to it
-    // and display the error
-    if (errors[0]) {
-      errorsE[0].focus();
-      
-      this.handleErrors(errors);      
-      return false;
-    }
-
-    // Disable the buttons and submit!
-    var buttons = form.getElementsByTagName("input");
-    for (i = 0; i < buttons.length; i++) {
-      if (buttons[i].type == 'submit') {
-        buttons[i].disabled = true;
-        buttons[i].value = 'Please wait...';
-      }
-    }
+    this.validate = function(e) {
+	    var firstErrorElement = null;
+	    var errors = [];
+	    var errorsE = [];
+	    
+	    // Call the validate events on each of the inputs
+	    // To update the status of each field
+	    for ( var i = 0; i < fields.length; i++) {
+	      // Set the fields status to modified, so the alert icon
+	      // shows instead of the info if there is an error
+	      fields[i].setModified(true);
+	
+	      // Collect errors along the way
+	      var valid = fields[i].validate();
+	      
+	      // Check if field has validated AND
+	      // if it is a required field
+	      if (!valid) {
+	          // If field isn't required, but is filled out and invalid OR field is required - halt!
+	          if( (!fields[i].isRequiredField() && fields[i].value != null) || fields[i].isRequiredField() ) {
+	            errors[errors.length] = fields[i];
+	            errorsE[errorsE.length] = fields[i].getDOMElement();           
+	          }
+	      }
+	    }
+	
+	    // If an element was found, move the focus to it
+	    // and display the error
+	    if (errors[0]) {
+	      errorsE[0].focus();
+	      
+	      this.handleErrors(errors);      
+	      return stopEvent(e);
+	    }
+	
+	    // Disable the buttons and submit!
+	    var buttons = form.getElementsByTagName("input");
+	    for (i = 0; i < buttons.length; i++) {
+	      if (buttons[i].type == 'submit') {
+	        buttons[i].disabled = true;
+	        buttons[i].value = 'Please wait...';
+	      }
+	    }
     return true;
   };
   
@@ -1719,7 +1762,7 @@ ONEGEEK.forms.Form = function(f) {
       }
 
       // Add validate() call to form
-      form.onsubmit = this.validate.gbind(this);
+      _du.addEvent(form, 'submit', this.validate.gbindEvent(this, 'arg 2')); // This currently doesn't return false correctly.
       _du.addEvent(form, 'reset', this.reset.gbind(this));
     }
   };
@@ -1909,3 +1952,4 @@ addLoadEventGVal( function() {
   gvalidator = new ONEGEEK.forms.GValidator();  
   gvalidator.autoApplyFormValidation();
 });
+
