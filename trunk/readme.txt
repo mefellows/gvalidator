@@ -133,6 +133,10 @@ To get the latest code, view or post bugs or learn more go to:
 
 GValidator Change Log
 ----------------------------------------------------------------
+0.5.90
+--
+ - Minor bug fix for single checkbox forms.
+
 0.5.49
 --
 
