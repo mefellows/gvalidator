@@ -1001,9 +1001,13 @@ ONEGEEK.forms.Checkbox = function(field) {
    * Override validation function
    */
     this.validate = function() {
+    	
 	    // Check if the form has a value set for this checkbox
 	    // by cycling through all of the checkboxes
-	    var elements = document.forms[0].elements[this.field.name];
+        var elements = document.forms[0].elements[this.field.name];
+        if (elements.length === undefined) {
+            elements = [ elements ];
+        }
 	    for (i = 0; i < elements.length; i++) {
 	      if (elements[i].checked) {
 	        this.setState(ONEGEEK.forms.FIELD_STATUS_OK);
@@ -1037,6 +1041,9 @@ ONEGEEK.forms.Checkbox = function(field) {
 
     // Add events to ALL of the items
     var elements = document.forms[0].elements[this.field.name];
+    if (elements.length === undefined) {
+        elements = [ elements ];
+    }
     for (i = 0; i < elements.length; i++) {
       _du.addEvent(elements[i], 'click', this.applyFieldValidation(this));
       _du.addEvent(elements[i], 'click', this.applyContextInformation(this));
@@ -1101,9 +1108,9 @@ ONEGEEK.forms.RadioButton = function(field) {
    * Override validation function:
    */
     this.validate = function() {
-	    // Check if the form has a value set for this checkbox
-	    // by cycling through all of the checkboxes
-	    var elements = document.forms[0].elements[this.field.name];
+	    // Check if the form has a value set for this radio button
+	    // by cycling through all of the radio buttons
+        var elements = document.forms[0].elements[this.field.name];
 	    for (i = 0; i < elements.length; i++) {
 	      if (elements[i].checked) {
 	        this.setState(ONEGEEK.forms.FIELD_STATUS_OK);
